@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, ShieldCheck, BarChart, Database, Package, RefreshCw } from 'lucide-react';
@@ -133,9 +132,8 @@ const Index = () => {
             {features.map((feature, index) => (
               <Card 
                 key={index} 
-                className="animate-on-scroll" 
+                className="animate-on-scroll transition-all duration-300 hover:shadow-lg hover:-translate-y-1" 
                 style={{ animationDelay: `${index * 0.1}s` }}
-                hover
               >
                 <CardHeader>
                   <div className="mb-4">{feature.icon}</div>

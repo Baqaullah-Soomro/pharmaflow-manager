@@ -16,8 +16,13 @@ const buttonVariants = cva(
       size: {
         icon: 'h-9 w-9',
         lg: 'h-11 px-8 rounded-md',
+        sm: 'h-9 rounded-md px-3',  // Added 'sm' size to match button.tsx
+        default: 'h-10 px-4 py-2',  // Added 'default' size to match button.tsx
       },
     },
+    defaultVariants: {
+      size: "default",
+    }
   }
 );
 
@@ -40,7 +45,7 @@ const CustomButton = React.forwardRef<HTMLButtonElement, CustomButtonProps>(
     }
 
     // For default shadcn button variants
-    return <ShadcnButton className={className} ref={ref} {...props} />;
+    return <ShadcnButton className={className} size={size} ref={ref} {...props} />;
   }
 );
 CustomButton.displayName = 'CustomButton';

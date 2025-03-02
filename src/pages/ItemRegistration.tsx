@@ -278,7 +278,7 @@ const ItemRegistration = () => {
           <CardHeader>
             <div className="flex justify-between items-center">
               <CardTitle>Item Inventory</CardTitle>
-              <CustomButton variant="premium" size="sm" onClick={resetForm}>
+              <CustomButton variant="premium" onClick={resetForm}>
                 <Plus className="mr-2 h-4 w-4" />
                 New Item
               </CustomButton>

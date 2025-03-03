@@ -1,325 +1,356 @@
 
 import React, { useState } from 'react';
-import { UserPlus, Save, Edit, Trash, Plus } from 'lucide-react';
+import { UserPlus, User, Save, Edit, Trash2, Search, Award } from 'lucide-react';
 import PageContainer from '@/components/ui/PageContainer';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { CustomButton } from '@/components/ui/CustomButton';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { useToast } from '@/components/ui/use-toast';
 import SearchInput from '@/components/ui/SearchInput';
 
-// Mock data for cities
-const cities = ['Lahore', 'Karachi', 'Islamabad', 'Rawalpindi', 'Faisalabad', 'Multan'];
-
-// Mock data for salespeople
-const mockSalespeople = [
-  { id: 'SP001', name: 'Ahmed Khan', fatherName: 'Tariq Khan', address: '123 Sales St, Block A', city: 'Lahore', phone: '042-35777123', cellPhone: '0300-1234567' },
-  { id: 'SP002', name: 'Sara Ali', fatherName: 'Kamran Ali', address: '456 Marketing Ave, Phase 2', city: 'Karachi', phone: '021-35123456', cellPhone: '0312-7654321' },
-  { id: 'SP003', name: 'Usman Ahmad', fatherName: 'Bilal Ahmad', address: '789 Commerce Rd, Sector F', city: 'Islamabad', phone: '051-2345678', cellPhone: '0333-9876543' },
-  { id: 'SP004', name: 'Fatima Hassan', fatherName: 'Hassan Raza', address: '321 Enterprise Blvd, Scheme 3', city: 'Rawalpindi', phone: '051-5432167', cellPhone: '0321-5678901' },
+// Mock data for sales persons
+const mockSalesPersons = [
+  { id: 'SP001', name: 'John Smith', fatherName: 'Robert Smith', address: '123 Sales St', city: 'New York', phone: '212-555-7890', cellPhone: '917-555-4321' },
+  { id: 'SP002', name: 'Sarah Johnson', fatherName: 'Michael Johnson', address: '456 Marketing Ave', city: 'Chicago', phone: '312-555-9876', cellPhone: '773-555-6543' },
+  { id: 'SP003', name: 'David Lee', fatherName: 'James Lee', address: '789 Commerce Rd', city: 'Los Angeles', phone: '213-555-2345', cellPhone: '323-555-7654' },
+  { id: 'SP004', name: 'Maria Garcia', fatherName: 'Carlos Garcia', address: '101 Distribution Ln', city: 'Miami', phone: '305-555-8765', cellPhone: '786-555-3456' },
 ];
 
+// Cities
+const cities = ['New York', 'Chicago', 'Los Angeles', 'Miami', 'Dallas', 'Boston', 'Seattle', 'Philadelphia'];
+
 const SalesPerson = () => {
-  const [salespeople, setSalespeople] = useState(mockSalespeople);
-  const [filteredSalespeople, setFilteredSalespeople] = useState(mockSalespeople);
-  
-  // Form state
-  const [personId, setPersonId] = useState('');
-  const [name, setName] = useState('');
-  const [fatherName, setFatherName] = useState('');
-  const [address, setAddress] = useState('');
-  const [city, setCity] = useState('');
-  const [phone, setPhone] = useState('');
-  const [cellPhone, setCellPhone] = useState('');
-  const [isEditing, setIsEditing] = useState(false);
-  const [currentPersonId, setCurrentPersonId] = useState('');
-  
-  // Search state
+  const [salesPersons, setSalesPersons] = useState(mockSalesPersons);
+  const [formMode, setFormMode] = useState<'add' | 'edit'>('add');
   const [searchTerm, setSearchTerm] = useState('');
   
-  // Generate new salesperson ID
-  React.useEffect(() => {
-    if (!isEditing) {
-      const newPersonId = `SP${String(salespeople.length + 1).padStart(3, '0')}`;
-      setPersonId(newPersonId);
-    }
-  }, [salespeople, isEditing]);
+  const [currentSalesPerson, setCurrentSalesPerson] = useState({
+    id: '',
+    name: '',
+    fatherName: '',
+    address: '',
+    city: '',
+    phone: '',
+    cellPhone: ''
+  });
   
-  // Filter salespeople based on search term
-  React.useEffect(() => {
-    if (searchTerm.trim() === '') {
-      setFilteredSalespeople(salespeople);
-    } else {
-      const filtered = salespeople.filter(person =>
-        person.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        person.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        person.city.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      setFilteredSalespeople(filtered);
-    }
-  }, [salespeople, searchTerm]);
-  
-  const handleSave = () => {
-    if (!name || !city) {
-      alert('Name and City are required');
+  const { toast } = useToast();
+
+  // Filter sales persons based on search
+  const filteredSalesPersons = salesPersons.filter(person =>
+    person.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    person.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    person.city.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const resetForm = () => {
+    setCurrentSalesPerson({
+      id: '',
+      name: '',
+      fatherName: '',
+      address: '',
+      city: '',
+      phone: '',
+      cellPhone: ''
+    });
+    setFormMode('add');
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setCurrentSalesPerson(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!currentSalesPerson.id || !currentSalesPerson.name) {
+      toast({
+        title: "Required Fields Missing",
+        description: "Sales Person ID and Name are required fields.",
+        variant: "destructive"
+      });
       return;
     }
     
-    const newPerson = {
-      id: personId,
-      name,
-      fatherName,
-      address,
-      city,
-      phone,
-      cellPhone
-    };
-    
-    if (isEditing) {
-      // Update existing salesperson
-      setSalespeople(salespeople.map(person => 
-        person.id === currentPersonId ? newPerson : person
-      ));
-      setIsEditing(false);
-    } else {
-      // Add new salesperson
-      setSalespeople([...salespeople, newPerson]);
-    }
-    
-    // Reset form
-    resetForm();
-  };
-  
-  const handleEdit = (id: string) => {
-    const personToEdit = salespeople.find(person => person.id === id);
-    if (personToEdit) {
-      setPersonId(personToEdit.id);
-      setName(personToEdit.name);
-      setFatherName(personToEdit.fatherName);
-      setAddress(personToEdit.address);
-      setCity(personToEdit.city);
-      setPhone(personToEdit.phone);
-      setCellPhone(personToEdit.cellPhone);
-      setIsEditing(true);
-      setCurrentPersonId(id);
-    }
-  };
-  
-  const handleDelete = (id: string) => {
-    const confirmDelete = window.confirm('Are you sure you want to delete this salesperson?');
-    if (confirmDelete) {
-      setSalespeople(salespeople.filter(person => person.id !== id));
-      if (currentPersonId === id) {
-        resetForm();
+    if (formMode === 'add') {
+      // Check if ID already exists
+      if (salesPersons.some(person => person.id === currentSalesPerson.id)) {
+        toast({
+          title: "Duplicate ID",
+          description: "A sales person with this ID already exists.",
+          variant: "destructive"
+        });
+        return;
       }
+      
+      // Add new sales person
+      setSalesPersons([...salesPersons, currentSalesPerson]);
+      toast({
+        title: "Sales Person Added",
+        description: `${currentSalesPerson.name} has been added successfully.`
+      });
+    } else {
+      // Update existing sales person
+      setSalesPersons(salesPersons.map(person => 
+        person.id === currentSalesPerson.id ? currentSalesPerson : person
+      ));
+      toast({
+        title: "Sales Person Updated",
+        description: `${currentSalesPerson.name}'s information has been updated successfully.`
+      });
     }
-  };
-  
-  const handleNew = () => {
+    
     resetForm();
-    setIsEditing(false);
   };
-  
-  const resetForm = () => {
-    const newPersonId = `SP${String(salespeople.length + 1).padStart(3, '0')}`;
-    setPersonId(newPersonId);
-    setName('');
-    setFatherName('');
-    setAddress('');
-    setCity('');
-    setPhone('');
-    setCellPhone('');
-    setCurrentPersonId('');
+
+  const handleEdit = (person: typeof currentSalesPerson) => {
+    setCurrentSalesPerson(person);
+    setFormMode('edit');
   };
-  
+
+  const handleDelete = (id: string) => {
+    setSalesPersons(salesPersons.filter(person => person.id !== id));
+    toast({
+      title: "Sales Person Deleted",
+      description: "The sales person has been removed successfully.",
+      variant: "destructive"
+    });
+  };
+
   return (
-    <PageContainer 
-      title="Sales Person" 
+    <PageContainer
+      title="Sales Person"
       subtitle="Manage your sales team personnel"
     >
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Sales Person Form */}
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <CardTitle>{isEditing ? 'Edit Sales Person' : 'New Sales Person'}</CardTitle>
-            <CardDescription>
-              {isEditing 
-                ? 'Update sales person information' 
-                : 'Fill in the details to create a new sales person'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label htmlFor="personId" className="block text-sm font-medium mb-1">Sales Person ID</label>
-              <input
-                id="personId"
-                type="text"
-                className="w-full p-2 rounded-md border border-input bg-muted"
-                value={personId}
-                readOnly
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium mb-1">Name *</label>
-              <input
-                id="name"
-                type="text"
-                className="w-full p-2 rounded-md border border-input bg-background"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="fatherName" className="block text-sm font-medium mb-1">Father's Name</label>
-              <input
-                id="fatherName"
-                type="text"
-                className="w-full p-2 rounded-md border border-input bg-background"
-                value={fatherName}
-                onChange={(e) => setFatherName(e.target.value)}
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="address" className="block text-sm font-medium mb-1">Address</label>
-              <input
-                id="address"
-                type="text"
-                className="w-full p-2 rounded-md border border-input bg-background"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="city" className="block text-sm font-medium mb-1">City *</label>
-              <select
-                id="city"
-                className="w-full p-2 rounded-md border border-input bg-background"
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-                required
+        <div className="lg:col-span-1 space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <UserPlus className="h-5 w-5" />
+                {formMode === 'add' ? 'Add Sales Person' : 'Edit Sales Person'}
+              </CardTitle>
+              <CardDescription>
+                {formMode === 'add' 
+                  ? 'Create a new sales team member' 
+                  : `Editing ${currentSalesPerson.name}'s information`}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="id">Sales Person ID</Label>
+                    <Input
+                      id="id"
+                      name="id"
+                      value={currentSalesPerson.id}
+                      onChange={handleInputChange}
+                      placeholder="e.g., SP001"
+                      readOnly={formMode === 'edit'}
+                      className={formMode === 'edit' ? 'bg-muted' : ''}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Name</Label>
+                    <Input
+                      id="name"
+                      name="name"
+                      value={currentSalesPerson.name}
+                      onChange={handleInputChange}
+                      placeholder="Full Name"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="fatherName">Father's Name</Label>
+                    <Input
+                      id="fatherName"
+                      name="fatherName"
+                      value={currentSalesPerson.fatherName}
+                      onChange={handleInputChange}
+                      placeholder="Father's Name"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="address">Address</Label>
+                    <Input
+                      id="address"
+                      name="address"
+                      value={currentSalesPerson.address}
+                      onChange={handleInputChange}
+                      placeholder="Full Address"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="city">City</Label>
+                    <select
+                      id="city"
+                      name="city"
+                      value={currentSalesPerson.city}
+                      onChange={handleInputChange}
+                      className="w-full p-2 rounded-md border border-input bg-background"
+                    >
+                      <option value="">Select City</option>
+                      {cities.map((city, index) => (
+                        <option key={index} value={city}>{city}</option>
+                      ))}
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone</Label>
+                    <Input
+                      id="phone"
+                      name="phone"
+                      value={currentSalesPerson.phone}
+                      onChange={handleInputChange}
+                      placeholder="Office Phone"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="cellPhone">Cell Phone</Label>
+                    <Input
+                      id="cellPhone"
+                      name="cellPhone"
+                      value={currentSalesPerson.cellPhone}
+                      onChange={handleInputChange}
+                      placeholder="Mobile Number"
+                    />
+                  </div>
+                </div>
+              </form>
+            </CardContent>
+            <CardFooter className="flex justify-between">
+              <Button 
+                variant="outline" 
+                onClick={resetForm}
               >
-                <option value="">-- Select City --</option>
-                {cities.map((cityOption, index) => (
-                  <option key={index} value={cityOption}>{cityOption}</option>
-                ))}
-              </select>
-            </div>
-            
-            <div>
-              <label htmlFor="phone" className="block text-sm font-medium mb-1">Phone</label>
-              <input
-                id="phone"
-                type="text"
-                className="w-full p-2 rounded-md border border-input bg-background"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="cellPhone" className="block text-sm font-medium mb-1">Cell Phone</label>
-              <input
-                id="cellPhone"
-                type="text"
-                className="w-full p-2 rounded-md border border-input bg-background"
-                value={cellPhone}
-                onChange={(e) => setCellPhone(e.target.value)}
-              />
-            </div>
-            
-            <div className="flex space-x-2">
-              <CustomButton 
-                onClick={handleNew} 
-                variant="outline3D"
-                className="flex-1"
+                {formMode === 'add' ? 'Clear' : 'Cancel'}
+              </Button>
+              <Button 
+                onClick={handleSubmit}
               >
-                <Plus className="h-4 w-4 mr-2" />
-                New
-              </CustomButton>
-              
-              <CustomButton 
-                onClick={handleSave} 
-                variant="premium"
-                className="flex-1"
-              >
-                <Save className="h-4 w-4 mr-2" />
-                Save
-              </CustomButton>
-            </div>
-          </CardContent>
-        </Card>
+                {formMode === 'add' ? (
+                  <>
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    Add Person
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    Update Person
+                  </>
+                )}
+              </Button>
+            </CardFooter>
+          </Card>
+        </div>
         
-        {/* Sales Person Table */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Sales Team</CardTitle>
-            <CardDescription>View and manage your sales team</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Search */}
-            <SearchInput
-              value={searchTerm}
-              onChange={setSearchTerm}
-              placeholder="Search by name, ID or city..."
-              className="mb-4"
-            />
-            
-            {/* Table */}
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="bg-muted/50">
-                    <th className="px-4 py-2 text-left">ID</th>
-                    <th className="px-4 py-2 text-left">Name</th>
-                    <th className="px-4 py-2 text-left">Father's Name</th>
-                    <th className="px-4 py-2 text-left">City</th>
-                    <th className="px-4 py-2 text-left">Cell Phone</th>
-                    <th className="px-4 py-2 text-center">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredSalespeople.length > 0 ? (
-                    filteredSalespeople.map((person, index) => (
-                      <tr key={person.id} className={index % 2 === 0 ? 'bg-background' : 'bg-muted/20'}>
-                        <td className="px-4 py-2">{person.id}</td>
-                        <td className="px-4 py-2">{person.name}</td>
-                        <td className="px-4 py-2">{person.fatherName}</td>
-                        <td className="px-4 py-2">{person.city}</td>
-                        <td className="px-4 py-2">{person.cellPhone}</td>
-                        <td className="px-4 py-2 flex justify-center space-x-2">
-                          <CustomButton 
-                            onClick={() => handleEdit(person.id)} 
-                            variant="outline3D"
-                            size="sm"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </CustomButton>
-                          <CustomButton 
-                            onClick={() => handleDelete(person.id)} 
-                            variant="outline3D"
-                            size="sm"
-                            className="text-destructive hover:text-destructive"
-                          >
-                            <Trash className="h-4 w-4" />
-                          </CustomButton>
+        {/* Sales Persons List */}
+        <div className="lg:col-span-2 space-y-6">
+          <Card>
+            <CardHeader>
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5" />
+                  Sales Team Directory
+                </CardTitle>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={resetForm}
+                >
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  New Person
+                </Button>
+              </div>
+              <CardDescription>
+                Search and manage your sales team members
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Search */}
+              <SearchInput
+                value={searchTerm}
+                onChange={setSearchTerm}
+                placeholder="Search by ID, name or city..."
+              />
+              
+              {/* Sales Persons Table */}
+              <div className="overflow-x-auto border rounded-md">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-muted/50">
+                      <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">ID</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Name</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Father's Name</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">City</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Cell Phone</th>
+                      <th className="px-4 py-3 text-center text-sm font-medium text-muted-foreground">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredSalesPersons.length > 0 ? (
+                      filteredSalesPersons.map((person, index) => (
+                        <tr 
+                          key={person.id} 
+                          className={`border-t border-border ${index % 2 === 0 ? 'bg-background' : 'bg-muted/20'}`}
+                        >
+                          <td className="px-4 py-3 text-sm">{person.id}</td>
+                          <td className="px-4 py-3 text-sm font-medium">{person.name}</td>
+                          <td className="px-4 py-3 text-sm">{person.fatherName}</td>
+                          <td className="px-4 py-3 text-sm">{person.city}</td>
+                          <td className="px-4 py-3 text-sm">{person.cellPhone}</td>
+                          <td className="px-4 py-3 text-sm">
+                            <div className="flex items-center justify-center space-x-2">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleEdit(person)}
+                                title="Edit"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleDelete(person.id)}
+                                title="Delete"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                          <Search className="mx-auto h-8 w-8 mb-2 opacity-20" />
+                          {searchTerm ? 
+                            'No sales persons match your search criteria' : 
+                            'No sales persons have been added yet'}
                         </td>
                       </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={6} className="px-4 py-4 text-center text-muted-foreground">
-                        No sales personnel found
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </PageContainer>
   );

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { Menu, X, ChevronDown } from 'lucide-react';
@@ -7,6 +6,7 @@ import { cn } from '@/lib/utils';
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [otherMenuOpen, setOtherMenuOpen] = useState(false);
   
   useEffect(() => {
     const handleScroll = () => {
@@ -31,7 +31,19 @@ const Navbar = () => {
     { name: 'Reports', path: '/accounts-reports' },
     { name: 'Cash Collections', path: '/cash-bank-collections' },
     { name: 'Cash Payment', path: '/cash-bank-payment' },
+  ];
+
+  const otherMenuLinks = [
     { name: 'Other Menu', path: '/other-menu' },
+    { name: 'New Report', path: '/other-menu/new-report' },
+    { name: 'New Account', path: '/other-menu/new-account' },
+    { name: 'Sales Person', path: '/other-menu/sales-person' },
+    { name: 'Inventory', path: '/other-menu/inventory' },
+    { name: 'Voucher', path: '/other-menu/voucher' },
+    { name: 'Purchase Return', path: '/other-menu/purchase-return' },
+    { name: 'Sales Target', path: '/other-menu/sales-target' },
+    { name: 'New User', path: '/other-menu/new-user' },
+    { name: 'New Customer', path: '/other-menu/new-customer' },
   ];
 
   return (
@@ -114,6 +126,40 @@ const Navbar = () => {
                 {link.name}
               </NavLink>
             ))}
+
+            {/* Other Menu Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setOtherMenuOpen(!otherMenuOpen)}
+                className="flex items-center text-sm font-medium text-muted-foreground hover:text-primary"
+              >
+                Other Menu
+                <ChevronDown className={cn("ml-1 h-4 w-4 transition-transform", otherMenuOpen && "rotate-180")} />
+              </button>
+              
+              {otherMenuOpen && (
+                <div className="absolute top-full right-0 mt-2 w-56 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 overflow-hidden z-50">
+                  <div className="py-1">
+                    {otherMenuLinks.slice(1).map((link) => (
+                      <NavLink
+                        key={link.path}
+                        to={link.path}
+                        className={({ isActive }) =>
+                          cn(
+                            'block px-4 py-2 text-sm hover:bg-gray-100',
+                            isActive ? 'text-primary font-medium' : 'text-gray-700'
+                          )
+                        }
+                        onClick={() => setOtherMenuOpen(false)}
+                      >
+                        {link.name}
+                      </NavLink>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
             <NavLink
               to="/auth"
               className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
@@ -165,6 +211,39 @@ const Navbar = () => {
               {link.name}
             </NavLink>
           ))}
+          
+          {/* Mobile Other Menu Accordion */}
+          <div className="border-t border-gray-200 mt-2 pt-2">
+            <button
+              onClick={() => setOtherMenuOpen(!otherMenuOpen)}
+              className="flex w-full items-center justify-between px-3 py-2 rounded-md text-base font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+            >
+              Other Menu
+              <ChevronDown className={cn("h-4 w-4 transition-transform", otherMenuOpen && "rotate-180")} />
+            </button>
+            
+            <div className={cn("pl-4 space-y-1 overflow-hidden transition-all", 
+              otherMenuOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0")}>
+              {otherMenuLinks.slice(1).map((link) => (
+                <NavLink
+                  key={link.path}
+                  to={link.path}
+                  className={({ isActive }) =>
+                    cn(
+                      'block px-3 py-2 rounded-md text-sm font-medium transition-colors',
+                      isActive
+                        ? 'bg-muted text-primary'
+                        : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                    )
+                  }
+                  onClick={() => setIsOpen(false)}
+                >
+                  {link.name}
+                </NavLink>
+              ))}
+            </div>
+          </div>
+          
           <NavLink
             to="/auth"
             className="block px-3 py-2 rounded-md text-base font-medium bg-primary text-primary-foreground transition-colors hover:bg-primary/90"

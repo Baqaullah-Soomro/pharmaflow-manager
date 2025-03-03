@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -18,6 +17,17 @@ import AccountsReports from "./pages/AccountsReports";
 import OtherMenu from "./pages/OtherMenu";
 import CashBankCollections from "./pages/CashBankCollections";
 import CashBankPayment from "./pages/CashBankPayment";
+
+// Other Menu Pages
+import NewReport from "./pages/otherMenu/NewReport";
+import NewAccount from "./pages/otherMenu/NewAccount";
+import SalesPerson from "./pages/otherMenu/SalesPerson";
+import Inventory from "./pages/otherMenu/Inventory";
+import Voucher from "./pages/otherMenu/Voucher";
+import PurchaseReturn from "./pages/otherMenu/PurchaseReturn";
+import SalesTarget from "./pages/otherMenu/SalesTarget";
+import NewUser from "./pages/otherMenu/NewUser";
+import NewCustomer from "./pages/otherMenu/NewCustomer";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +51,18 @@ const App = () => (
           <Route path="/other-menu" element={<OtherMenu />} />
           <Route path="/cash-bank-collections" element={<CashBankCollections />} />
           <Route path="/cash-bank-payment" element={<CashBankPayment />} />
+          
+          {/* Other Menu Routes */}
+          <Route path="/other-menu/new-report" element={<NewReport />} />
+          <Route path="/other-menu/new-account" element={<NewAccount />} />
+          <Route path="/other-menu/sales-person" element={<SalesPerson />} />
+          <Route path="/other-menu/inventory" element={<Inventory />} />
+          <Route path="/other-menu/voucher" element={<Voucher />} />
+          <Route path="/other-menu/purchase-return" element={<PurchaseReturn />} />
+          <Route path="/other-menu/sales-target" element={<SalesTarget />} />
+          <Route path="/other-menu/new-user" element={<NewUser />} />
+          <Route path="/other-menu/new-customer" element={<NewCustomer />} />
+          
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

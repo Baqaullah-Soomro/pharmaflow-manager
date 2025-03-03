@@ -10,7 +10,8 @@ import {
   RefreshCw, 
   BarChart4,
   UserCircle,
-  PlusCircle
+  PlusCircle,
+  FileCheck
 } from 'lucide-react';
 import PageContainer from '@/components/ui/PageContainer';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -24,7 +25,7 @@ const menuItems = [
     description: 'Create and generate new reports',
     icon: FileText,
     color: 'bg-blue-100 text-blue-600',
-    path: '#new-report'
+    path: '/other-menu/new-report'
   },
   {
     id: 'new-account',
@@ -32,7 +33,7 @@ const menuItems = [
     description: 'Add and manage customer or supplier accounts',
     icon: Users,
     color: 'bg-purple-100 text-purple-600',
-    path: '#new-account'
+    path: '/other-menu/new-account'
   },
   {
     id: 'sales-person',
@@ -40,7 +41,7 @@ const menuItems = [
     description: 'Manage your sales team personnel',
     icon: UserPlus,
     color: 'bg-green-100 text-green-600',
-    path: '#sales-person'
+    path: '/other-menu/sales-person'
   },
   {
     id: 'inventory',
@@ -48,7 +49,7 @@ const menuItems = [
     description: 'Check and manage your inventory levels',
     icon: Package,
     color: 'bg-amber-100 text-amber-600',
-    path: '/item-registration'
+    path: '/other-menu/inventory'
   },
   {
     id: 'voucher',
@@ -56,7 +57,7 @@ const menuItems = [
     description: 'Create payment and receipt vouchers',
     icon: FileSpreadsheet,
     color: 'bg-rose-100 text-rose-600',
-    path: '#voucher'
+    path: '/other-menu/voucher'
   },
   {
     id: 'purchase-return',
@@ -64,7 +65,7 @@ const menuItems = [
     description: 'Process returns to suppliers',
     icon: RefreshCw,
     color: 'bg-red-100 text-red-600',
-    path: '#purchase-return'
+    path: '/other-menu/purchase-return'
   },
   {
     id: 'sales-target',
@@ -72,7 +73,7 @@ const menuItems = [
     description: 'Set and monitor sales targets',
     icon: BarChart4,
     color: 'bg-cyan-100 text-cyan-600',
-    path: '#sales-target'
+    path: '/other-menu/sales-target'
   },
   {
     id: 'new-user',
@@ -80,7 +81,15 @@ const menuItems = [
     description: 'Add new system users with permissions',
     icon: UserCircle,
     color: 'bg-indigo-100 text-indigo-600',
-    path: '#new-user'
+    path: '/other-menu/new-user'
+  },
+  {
+    id: 'new-customer',
+    title: 'New Customer',
+    description: 'Add and manage customer information',
+    icon: FileCheck,
+    color: 'bg-emerald-100 text-emerald-600',
+    path: '/other-menu/new-customer'
   }
 ];
 

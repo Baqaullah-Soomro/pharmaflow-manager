@@ -1,341 +1,325 @@
 
 import React, { useState } from 'react';
+import { UserPlus, Save, Edit, Trash, Plus } from 'lucide-react';
 import PageContainer from '@/components/ui/PageContainer';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { CustomButton } from '@/components/ui/CustomButton';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
-import { UserPlus, Save, Edit, Trash2, Plus } from 'lucide-react';
 import SearchInput from '@/components/ui/SearchInput';
 
-// Mock data
-const mockSalesPeople = [
-  { id: 'SP001', name: 'John Smith', fatherName: 'Robert Smith', address: '123 Main St', city: 'New York', phone: '212-555-1234', cellPhone: '917-555-1234' },
-  { id: 'SP002', name: 'Sarah Johnson', fatherName: 'William Johnson', address: '456 Oak Ave', city: 'Chicago', phone: '312-555-5678', cellPhone: '773-555-5678' },
-  { id: 'SP003', name: 'Mike Brown', fatherName: 'James Brown', address: '789 Pine Blvd', city: 'Boston', phone: '617-555-9012', cellPhone: '857-555-9012' },
-  { id: 'SP004', name: 'Lisa Garcia', fatherName: 'Carlos Garcia', address: '321 Maple Dr', city: 'Miami', phone: '305-555-3456', cellPhone: '786-555-3456' },
-  { id: 'SP005', name: 'David Wilson', fatherName: 'Thomas Wilson', address: '654 Elm St', city: 'Seattle', phone: '206-555-7890', cellPhone: '425-555-7890' },
+// Mock data for cities
+const cities = ['Lahore', 'Karachi', 'Islamabad', 'Rawalpindi', 'Faisalabad', 'Multan'];
+
+// Mock data for salespeople
+const mockSalespeople = [
+  { id: 'SP001', name: 'Ahmed Khan', fatherName: 'Tariq Khan', address: '123 Sales St, Block A', city: 'Lahore', phone: '042-35777123', cellPhone: '0300-1234567' },
+  { id: 'SP002', name: 'Sara Ali', fatherName: 'Kamran Ali', address: '456 Marketing Ave, Phase 2', city: 'Karachi', phone: '021-35123456', cellPhone: '0312-7654321' },
+  { id: 'SP003', name: 'Usman Ahmad', fatherName: 'Bilal Ahmad', address: '789 Commerce Rd, Sector F', city: 'Islamabad', phone: '051-2345678', cellPhone: '0333-9876543' },
+  { id: 'SP004', name: 'Fatima Hassan', fatherName: 'Hassan Raza', address: '321 Enterprise Blvd, Scheme 3', city: 'Rawalpindi', phone: '051-5432167', cellPhone: '0321-5678901' },
 ];
 
-const cities = ['New York', 'Chicago', 'Boston', 'Miami', 'Seattle', 'San Francisco', 'Los Angeles'];
-
 const SalesPerson = () => {
-  const { toast } = useToast();
-  const [salesPeople, setSalesPeople] = useState(mockSalesPeople);
-  const [newSalesPersonId, setNewSalesPersonId] = useState('SP006');
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [selectedPerson, setSelectedPerson] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [salespeople, setSalespeople] = useState(mockSalespeople);
+  const [filteredSalespeople, setFilteredSalespeople] = useState(mockSalespeople);
   
   // Form state
-  const [formData, setFormData] = useState({
-    id: newSalesPersonId,
-    name: '',
-    fatherName: '',
-    address: '',
-    city: '',
-    phone: '',
-    cellPhone: ''
-  });
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const resetForm = () => {
-    setFormData({
-      id: newSalesPersonId,
-      name: '',
-      fatherName: '',
-      address: '',
-      city: '',
-      phone: '',
-      cellPhone: ''
-    });
-    setIsEditMode(false);
-    setSelectedPerson(null);
-  };
-
+  const [personId, setPersonId] = useState('');
+  const [name, setName] = useState('');
+  const [fatherName, setFatherName] = useState('');
+  const [address, setAddress] = useState('');
+  const [city, setCity] = useState('');
+  const [phone, setPhone] = useState('');
+  const [cellPhone, setCellPhone] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentPersonId, setCurrentPersonId] = useState('');
+  
+  // Search state
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  // Generate new salesperson ID
+  React.useEffect(() => {
+    if (!isEditing) {
+      const newPersonId = `SP${String(salespeople.length + 1).padStart(3, '0')}`;
+      setPersonId(newPersonId);
+    }
+  }, [salespeople, isEditing]);
+  
+  // Filter salespeople based on search term
+  React.useEffect(() => {
+    if (searchTerm.trim() === '') {
+      setFilteredSalespeople(salespeople);
+    } else {
+      const filtered = salespeople.filter(person =>
+        person.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        person.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        person.city.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredSalespeople(filtered);
+    }
+  }, [salespeople, searchTerm]);
+  
   const handleSave = () => {
-    // Validation
-    if (!formData.name) {
-      toast({
-        title: "Validation Error",
-        description: "Please enter the sales person's name.",
-        variant: "destructive"
-      });
+    if (!name || !city) {
+      alert('Name and City are required');
       return;
     }
-
-    if (isEditMode && selectedPerson) {
-      // Update existing sales person
-      setSalesPeople(prev => 
-        prev.map(person => 
-          person.id === selectedPerson ? { ...formData } : person
-        )
-      );
-      
-      toast({
-        title: "Updated",
-        description: "Sales person information has been updated."
-      });
-      
-      resetForm();
+    
+    const newPerson = {
+      id: personId,
+      name,
+      fatherName,
+      address,
+      city,
+      phone,
+      cellPhone
+    };
+    
+    if (isEditing) {
+      // Update existing salesperson
+      setSalespeople(salespeople.map(person => 
+        person.id === currentPersonId ? newPerson : person
+      ));
+      setIsEditing(false);
     } else {
-      // Add new sales person
-      setSalesPeople(prev => [...prev, { ...formData }]);
-      
-      // Generate next ID
-      const nextId = `SP${String(parseInt(newSalesPersonId.replace('SP', '')) + 1).padStart(3, '0')}`;
-      setNewSalesPersonId(nextId);
-      
-      toast({
-        title: "Success",
-        description: "New sales person has been added."
-      });
-      
-      resetForm();
-      setFormData(prev => ({ ...prev, id: nextId }));
+      // Add new salesperson
+      setSalespeople([...salespeople, newPerson]);
     }
+    
+    // Reset form
+    resetForm();
   };
-
+  
   const handleEdit = (id: string) => {
-    const personToEdit = salesPeople.find(person => person.id === id);
+    const personToEdit = salespeople.find(person => person.id === id);
     if (personToEdit) {
-      setFormData({ ...personToEdit });
-      setIsEditMode(true);
-      setSelectedPerson(id);
+      setPersonId(personToEdit.id);
+      setName(personToEdit.name);
+      setFatherName(personToEdit.fatherName);
+      setAddress(personToEdit.address);
+      setCity(personToEdit.city);
+      setPhone(personToEdit.phone);
+      setCellPhone(personToEdit.cellPhone);
+      setIsEditing(true);
+      setCurrentPersonId(id);
     }
   };
-
+  
   const handleDelete = (id: string) => {
-    setSalesPeople(prev => prev.filter(person => person.id !== id));
-    
-    toast({
-      title: "Deleted",
-      description: "Sales person has been removed."
-    });
-    
-    if (selectedPerson === id) {
-      resetForm();
+    const confirmDelete = window.confirm('Are you sure you want to delete this salesperson?');
+    if (confirmDelete) {
+      setSalespeople(salespeople.filter(person => person.id !== id));
+      if (currentPersonId === id) {
+        resetForm();
+      }
     }
   };
-
-  // Filter sales people based on search term
-  const filteredSalesPeople = salesPeople.filter(person => 
-    person.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    person.id.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
+  
+  const handleNew = () => {
+    resetForm();
+    setIsEditing(false);
+  };
+  
+  const resetForm = () => {
+    const newPersonId = `SP${String(salespeople.length + 1).padStart(3, '0')}`;
+    setPersonId(newPersonId);
+    setName('');
+    setFatherName('');
+    setAddress('');
+    setCity('');
+    setPhone('');
+    setCellPhone('');
+    setCurrentPersonId('');
+  };
+  
   return (
     <PageContainer 
-      title="Sales Personnel Management" 
-      subtitle="Add and manage your sales team members"
+      title="Sales Person" 
+      subtitle="Manage your sales team personnel"
     >
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-1">
-          <Card className="h-full">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <UserPlus className="h-5 w-5" />
-                {isEditMode ? "Edit Sales Person" : "Add Sales Person"}
-              </CardTitle>
-              <CardDescription>
-                {isEditMode 
-                  ? "Update the information for an existing sales person." 
-                  : "Enter details to add a new sales person to your team."
-                }
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="id">Sales Person ID</Label>
-                  <Input 
-                    id="id" 
-                    name="id" 
-                    value={formData.id} 
-                    readOnly
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="name">Name *</Label>
-                  <Input 
-                    id="name" 
-                    name="name" 
-                    value={formData.name} 
-                    onChange={handleInputChange}
-                    placeholder="Full name"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="fatherName">Father's Name</Label>
-                  <Input 
-                    id="fatherName" 
-                    name="fatherName" 
-                    value={formData.fatherName} 
-                    onChange={handleInputChange}
-                    placeholder="Father's name"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="address">Address</Label>
-                  <Input 
-                    id="address" 
-                    name="address" 
-                    value={formData.address} 
-                    onChange={handleInputChange}
-                    placeholder="Street address"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="city">City</Label>
-                  <Select
-                    value={formData.city}
-                    onValueChange={(value) => handleSelectChange('city', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select city" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {cities.map(city => (
-                        <SelectItem key={city} value={city}>{city}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone</Label>
-                  <Input 
-                    id="phone" 
-                    name="phone" 
-                    value={formData.phone} 
-                    onChange={handleInputChange}
-                    placeholder="Office phone"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="cellPhone">Cell Phone</Label>
-                  <Input 
-                    id="cellPhone" 
-                    name="cellPhone" 
-                    value={formData.cellPhone} 
-                    onChange={handleInputChange}
-                    placeholder="Mobile number"
-                  />
-                </div>
-                
-                <div className="flex gap-3 pt-4">
-                  <CustomButton
-                    variant="outline3D"
-                    onClick={resetForm}
-                    className="flex-1"
-                  >
-                    <Plus className="h-4 w-4" />
-                    New
-                  </CustomButton>
-                  
-                  <CustomButton
-                    onClick={handleSave}
-                    className="flex-1"
-                  >
-                    <Save className="h-4 w-4" />
-                    {isEditMode ? "Update" : "Save"}
-                  </CustomButton>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-        
-        <div className="lg:col-span-2">
-          <Card className="h-full">
-            <CardHeader>
-              <CardTitle>Sales Team</CardTitle>
-              <CardDescription>
-                Manage your sales personnel records
-              </CardDescription>
-              <SearchInput 
-                value={searchTerm} 
-                onChange={setSearchTerm} 
-                placeholder="Search by name or ID..."
-                className="mt-2"
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+        {/* Sales Person Form */}
+        <Card className="lg:col-span-1">
+          <CardHeader>
+            <CardTitle>{isEditing ? 'Edit Sales Person' : 'New Sales Person'}</CardTitle>
+            <CardDescription>
+              {isEditing 
+                ? 'Update sales person information' 
+                : 'Fill in the details to create a new sales person'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <label htmlFor="personId" className="block text-sm font-medium mb-1">Sales Person ID</label>
+              <input
+                id="personId"
+                type="text"
+                className="w-full p-2 rounded-md border border-input bg-muted"
+                value={personId}
+                readOnly
               />
-            </CardHeader>
-            <CardContent>
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>ID</TableHead>
-                      <TableHead>Name</TableHead>
-                      <TableHead className="hidden md:table-cell">City</TableHead>
-                      <TableHead className="hidden md:table-cell">Phone</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredSalesPeople.length > 0 ? (
-                      filteredSalesPeople.map((person) => (
-                        <TableRow key={person.id}>
-                          <TableCell>{person.id}</TableCell>
-                          <TableCell>
-                            <div>
-                              <div>{person.name}</div>
-                              <div className="text-sm text-muted-foreground md:hidden">
-                                {person.city} • {person.cellPhone || person.phone}
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell className="hidden md:table-cell">{person.city}</TableCell>
-                          <TableCell className="hidden md:table-cell">{person.cellPhone || person.phone}</TableCell>
-                          <TableCell>
-                            <div className="flex space-x-2">
-                              <CustomButton
-                                size="sm"
-                                variant="outline3D"
-                                onClick={() => handleEdit(person.id)}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </CustomButton>
-                              <CustomButton
-                                size="sm"
-                                variant="outline3D"
-                                onClick={() => handleDelete(person.id)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </CustomButton>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center py-4">
-                          No sales personnel found
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+            
+            <div>
+              <label htmlFor="name" className="block text-sm font-medium mb-1">Name *</label>
+              <input
+                id="name"
+                type="text"
+                className="w-full p-2 rounded-md border border-input bg-background"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
+            </div>
+            
+            <div>
+              <label htmlFor="fatherName" className="block text-sm font-medium mb-1">Father's Name</label>
+              <input
+                id="fatherName"
+                type="text"
+                className="w-full p-2 rounded-md border border-input bg-background"
+                value={fatherName}
+                onChange={(e) => setFatherName(e.target.value)}
+              />
+            </div>
+            
+            <div>
+              <label htmlFor="address" className="block text-sm font-medium mb-1">Address</label>
+              <input
+                id="address"
+                type="text"
+                className="w-full p-2 rounded-md border border-input bg-background"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+              />
+            </div>
+            
+            <div>
+              <label htmlFor="city" className="block text-sm font-medium mb-1">City *</label>
+              <select
+                id="city"
+                className="w-full p-2 rounded-md border border-input bg-background"
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                required
+              >
+                <option value="">-- Select City --</option>
+                {cities.map((cityOption, index) => (
+                  <option key={index} value={cityOption}>{cityOption}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div>
+              <label htmlFor="phone" className="block text-sm font-medium mb-1">Phone</label>
+              <input
+                id="phone"
+                type="text"
+                className="w-full p-2 rounded-md border border-input bg-background"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+              />
+            </div>
+            
+            <div>
+              <label htmlFor="cellPhone" className="block text-sm font-medium mb-1">Cell Phone</label>
+              <input
+                id="cellPhone"
+                type="text"
+                className="w-full p-2 rounded-md border border-input bg-background"
+                value={cellPhone}
+                onChange={(e) => setCellPhone(e.target.value)}
+              />
+            </div>
+            
+            <div className="flex space-x-2">
+              <CustomButton 
+                onClick={handleNew} 
+                variant="outline3D"
+                className="flex-1"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                New
+              </CustomButton>
+              
+              <CustomButton 
+                onClick={handleSave} 
+                variant="premium"
+                className="flex-1"
+              >
+                <Save className="h-4 w-4 mr-2" />
+                Save
+              </CustomButton>
+            </div>
+          </CardContent>
+        </Card>
+        
+        {/* Sales Person Table */}
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Sales Team</CardTitle>
+            <CardDescription>View and manage your sales team</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Search */}
+            <SearchInput
+              value={searchTerm}
+              onChange={setSearchTerm}
+              placeholder="Search by name, ID or city..."
+              className="mb-4"
+            />
+            
+            {/* Table */}
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="bg-muted/50">
+                    <th className="px-4 py-2 text-left">ID</th>
+                    <th className="px-4 py-2 text-left">Name</th>
+                    <th className="px-4 py-2 text-left">Father's Name</th>
+                    <th className="px-4 py-2 text-left">City</th>
+                    <th className="px-4 py-2 text-left">Cell Phone</th>
+                    <th className="px-4 py-2 text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredSalespeople.length > 0 ? (
+                    filteredSalespeople.map((person, index) => (
+                      <tr key={person.id} className={index % 2 === 0 ? 'bg-background' : 'bg-muted/20'}>
+                        <td className="px-4 py-2">{person.id}</td>
+                        <td className="px-4 py-2">{person.name}</td>
+                        <td className="px-4 py-2">{person.fatherName}</td>
+                        <td className="px-4 py-2">{person.city}</td>
+                        <td className="px-4 py-2">{person.cellPhone}</td>
+                        <td className="px-4 py-2 flex justify-center space-x-2">
+                          <CustomButton 
+                            onClick={() => handleEdit(person.id)} 
+                            variant="outline3D"
+                            size="sm"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </CustomButton>
+                          <CustomButton 
+                            onClick={() => handleDelete(person.id)} 
+                            variant="outline3D"
+                            size="sm"
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash className="h-4 w-4" />
+                          </CustomButton>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={6} className="px-4 py-4 text-center text-muted-foreground">
+                        No sales personnel found
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </PageContainer>
   );

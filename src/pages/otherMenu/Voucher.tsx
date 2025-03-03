@@ -1,499 +1,397 @@
 
 import React, { useState } from 'react';
+import { FileText, Save, Edit, Trash, ArrowLeft, ArrowRight, Plus, DollarSign } from 'lucide-react';
 import PageContainer from '@/components/ui/PageContainer';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { CustomButton } from '@/components/ui/CustomButton';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { useToast } from '@/hooks/use-toast';
-import { 
-  FileSpreadsheet, 
-  Calendar as CalendarIcon, 
-  Plus, 
-  Save, 
-  Edit, 
-  Trash2, 
-  ChevronLeft, 
-  ChevronRight 
-} from 'lucide-react';
-import { format } from 'date-fns';
-import { Textarea } from '@/components/ui/textarea';
+import { toast } from "@/hooks/use-toast";
 
-// Mock data
-const accounts = [
-  { id: 'AC001', title: 'ABC Pharmacy', balance: 25000 },
-  { id: 'AC002', title: 'XYZ Medical Supplies', balance: 36500 },
-  { id: 'AC003', title: 'Health Plus', balance: 12750 },
-  { id: 'AC004', title: 'Medical Wholesale Ltd', balance: 48900 },
-  { id: 'AC005', title: 'City Clinic', balance: 8300 },
+// Mock account data for dropdown
+const mockAccounts = [
+  { id: 'ACC001', title: 'City Hospital' },
+  { id: 'ACC002', title: 'Metro Pharmacy' },
+  { id: 'ACC003', title: 'MediSupply Co' },
+  { id: 'ACC004', title: 'Sunrise Clinic' },
+  { id: 'ACC005', title: 'Healthcare Solutions' },
+  { id: 'Cash', title: 'Cash Account' },
+  { id: 'Bank', title: 'Bank Account' },
 ];
 
+// Mock voucher data
 const mockVouchers = [
-  { 
-    id: 'VCH001', 
-    date: new Date('2023-09-15'), 
-    accountId: 'AC001',
-    accountTitle: 'ABC Pharmacy',
-    details: 'Payment for September inventory', 
-    debit: 5000, 
-    credit: 0 
-  },
-  { 
-    id: 'VCH002', 
-    date: new Date('2023-09-18'), 
-    accountId: 'AC002',
-    accountTitle: 'XYZ Medical Supplies',
-    details: 'Receipt of medical supplies', 
-    debit: 0, 
-    credit: 7500 
-  },
-  { 
-    id: 'VCH003', 
-    date: new Date('2023-09-20'), 
-    accountId: 'AC003',
-    accountTitle: 'Health Plus',
-    details: 'Cash payment for outstanding balance', 
-    debit: 3200, 
-    credit: 0 
-  },
-  { 
-    id: 'VCH004', 
-    date: new Date('2023-09-25'), 
-    accountId: 'AC004',
-    accountTitle: 'Medical Wholesale Ltd',
-    details: 'Purchase of surgical equipment', 
-    debit: 0, 
-    credit: 12500 
-  },
-  { 
-    id: 'VCH005', 
-    date: new Date('2023-09-30'), 
-    accountId: 'AC005',
-    accountTitle: 'City Clinic',
-    details: 'Monthly pharmacy supplies', 
-    debit: 4500, 
-    credit: 0 
-  }
+  { id: 'V001', date: '2023-04-15', accountId: 'ACC001', accountTitle: 'City Hospital', details: 'Payment for medical supplies', debit: 5000, credit: 0 },
+  { id: 'V002', date: '2023-04-16', accountId: 'ACC002', accountTitle: 'Metro Pharmacy', details: 'Receipt for medicine delivery', debit: 0, credit: 3500 },
+  { id: 'V003', date: '2023-04-17', accountId: 'Cash', accountTitle: 'Cash Account', details: 'Petty cash withdrawal', debit: 1000, credit: 0 },
+  { id: 'V004', date: '2023-04-18', accountId: 'ACC003', accountTitle: 'MediSupply Co', details: 'Invoice payment', debit: 0, credit: 7800 },
 ];
 
 const Voucher = () => {
-  const { toast } = useToast();
   const [vouchers, setVouchers] = useState(mockVouchers);
-  const [currentVoucherIndex, setCurrentVoucherIndex] = useState(0);
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [newVoucherId, setNewVoucherId] = useState('VCH006');
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const currentVoucher = vouchers[currentIndex];
   
   // Form state
-  const [formData, setFormData] = useState({
-    id: newVoucherId,
-    date: new Date(),
-    accountId: '',
-    accountTitle: '',
-    details: '',
-    debit: 0,
-    credit: 0
-  });
-
-  const [currentBalance, setCurrentBalance] = useState(0);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    
-    if (name === 'debit' || name === 'credit') {
-      const numValue = value === '' ? 0 : parseFloat(value);
-      setFormData(prev => ({ ...prev, [name]: numValue }));
-    } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
-    }
+  const [voucherNo, setVoucherNo] = useState('V001');
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [accountId, setAccountId] = useState('');
+  const [details, setDetails] = useState('');
+  const [debit, setDebit] = useState('');
+  const [credit, setCredit] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  
+  // Calculate balances
+  const accountBalance = 25000; // This would typically be fetched from an API
+  const totalDebit = vouchers.reduce((sum, v) => sum + v.debit, 0);
+  const totalCredit = vouchers.reduce((sum, v) => sum + v.credit, 0);
+  
+  const handleNew = () => {
+    // Generate new voucher number
+    const newVoucherNo = `V${String(vouchers.length + 1).padStart(3, '0')}`;
+    setVoucherNo(newVoucherNo);
+    setDate(new Date().toISOString().split('T')[0]);
+    setAccountId('');
+    setDetails('');
+    setDebit('');
+    setCredit('');
+    setIsEditing(false);
   };
-
-  const handleAccountChange = (accountId: string) => {
-    const selectedAccount = accounts.find(account => account.id === accountId);
-    if (selectedAccount) {
-      setFormData(prev => ({ 
-        ...prev, 
-        accountId, 
-        accountTitle: selectedAccount.title 
-      }));
-      setCurrentBalance(selectedAccount.balance);
-    }
-  };
-
-  const handleDateChange = (date: Date | undefined) => {
-    if (date) {
-      setFormData(prev => ({ ...prev, date }));
-    }
-  };
-
-  const resetForm = () => {
-    setFormData({
-      id: newVoucherId,
-      date: new Date(),
-      accountId: '',
-      accountTitle: '',
-      details: '',
-      debit: 0,
-      credit: 0
-    });
-    setCurrentBalance(0);
-    setIsEditMode(false);
-  };
-
+  
   const handleSave = () => {
-    // Validation
-    if (!formData.accountId) {
+    if (!accountId || !date || !details || (!debit && !credit)) {
       toast({
-        title: "Validation Error",
-        description: "Please select an account.",
+        title: "Error",
+        description: "Please fill in all required fields.",
         variant: "destructive"
       });
       return;
     }
-
-    if (formData.debit === 0 && formData.credit === 0) {
+    
+    if (debit && credit) {
       toast({
-        title: "Validation Error",
-        description: "Either debit or credit amount must be greater than zero.",
+        title: "Error",
+        description: "A voucher cannot have both debit and credit amounts.",
         variant: "destructive"
       });
       return;
     }
-
-    if (formData.debit > 0 && formData.credit > 0) {
-      toast({
-        title: "Validation Error",
-        description: "A voucher cannot have both debit and credit values. Please enter only one.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (isEditMode) {
+    
+    const selectedAccount = mockAccounts.find(acc => acc.id === accountId);
+    
+    const newVoucher = {
+      id: voucherNo,
+      date,
+      accountId,
+      accountTitle: selectedAccount?.title || '',
+      details,
+      debit: debit ? parseFloat(debit) : 0,
+      credit: credit ? parseFloat(credit) : 0
+    };
+    
+    if (isEditing) {
       // Update existing voucher
-      setVouchers(prev => 
-        prev.map((voucher, index) => 
-          index === currentVoucherIndex ? { ...formData } : voucher
-        )
-      );
-      
+      const updatedVouchers = [...vouchers];
+      updatedVouchers[currentIndex] = newVoucher;
+      setVouchers(updatedVouchers);
       toast({
-        title: "Updated",
-        description: "Voucher has been updated successfully."
+        title: "Success",
+        description: "Voucher updated successfully.",
       });
     } else {
       // Add new voucher
-      setVouchers(prev => [...prev, { ...formData }]);
-      
-      // Generate next ID
-      const nextId = `VCH${String(parseInt(newVoucherId.replace('VCH', '')) + 1).padStart(3, '0')}`;
-      setNewVoucherId(nextId);
-      
+      setVouchers([...vouchers, newVoucher]);
+      setCurrentIndex(vouchers.length);
       toast({
         title: "Success",
-        description: "New voucher has been created."
+        description: "New voucher created successfully.",
       });
-      
-      // Set the current index to the new voucher
-      setCurrentVoucherIndex(vouchers.length);
     }
     
-    resetForm();
-    setFormData(prev => ({ ...prev, id: newVoucherId }));
+    handleNew();
   };
-
+  
   const handleEdit = () => {
-    const currentVoucher = vouchers[currentVoucherIndex];
-    if (currentVoucher) {
-      const account = accounts.find(acc => acc.id === currentVoucher.accountId);
-      setFormData({ ...currentVoucher });
-      setCurrentBalance(account ? account.balance : 0);
-      setIsEditMode(true);
-    }
+    if (!currentVoucher) return;
+    
+    setVoucherNo(currentVoucher.id);
+    setDate(currentVoucher.date);
+    setAccountId(currentVoucher.accountId);
+    setDetails(currentVoucher.details);
+    setDebit(currentVoucher.debit ? currentVoucher.debit.toString() : '');
+    setCredit(currentVoucher.credit ? currentVoucher.credit.toString() : '');
+    setIsEditing(true);
   };
-
+  
   const handleDelete = () => {
-    if (vouchers.length > 0) {
-      const updatedVouchers = vouchers.filter((_, index) => index !== currentVoucherIndex);
-      setVouchers(updatedVouchers);
-      
-      // Adjust current index if needed
-      if (currentVoucherIndex >= updatedVouchers.length) {
-        setCurrentVoucherIndex(Math.max(0, updatedVouchers.length - 1));
-      }
-      
-      toast({
-        title: "Deleted",
-        description: "Voucher has been deleted."
-      });
-      
-      resetForm();
+    if (!currentVoucher) return;
+    
+    const confirmDelete = window.confirm('Are you sure you want to delete this voucher?');
+    if (!confirmDelete) return;
+    
+    const newVouchers = vouchers.filter((_, index) => index !== currentIndex);
+    setVouchers(newVouchers);
+    
+    if (currentIndex >= newVouchers.length && newVouchers.length > 0) {
+      setCurrentIndex(newVouchers.length - 1);
+    } else if (newVouchers.length === 0) {
+      handleNew();
+    }
+    
+    toast({
+      title: "Success",
+      description: "Voucher deleted successfully.",
+    });
+  };
+  
+  const handleNext = () => {
+    if (currentIndex < vouchers.length - 1) {
+      setCurrentIndex(currentIndex + 1);
+      handleLoadVoucher(currentIndex + 1);
     }
   };
-
-  const navigateVoucher = (direction: 'next' | 'prev') => {
-    if (direction === 'next' && currentVoucherIndex < vouchers.length - 1) {
-      setCurrentVoucherIndex(currentVoucherIndex + 1);
-      loadVoucher(currentVoucherIndex + 1);
-    } else if (direction === 'prev' && currentVoucherIndex > 0) {
-      setCurrentVoucherIndex(currentVoucherIndex - 1);
-      loadVoucher(currentVoucherIndex - 1);
+  
+  const handleBack = () => {
+    if (currentIndex > 0) {
+      setCurrentIndex(currentIndex - 1);
+      handleLoadVoucher(currentIndex - 1);
     }
   };
-
-  const loadVoucher = (index: number) => {
+  
+  const handleLoadVoucher = (index: number) => {
     const voucher = vouchers[index];
-    if (voucher) {
-      const account = accounts.find(acc => acc.id === voucher.accountId);
-      setFormData({ ...voucher });
-      setCurrentBalance(account ? account.balance : 0);
-      setIsEditMode(false);
-    }
+    if (!voucher) return;
+    
+    setVoucherNo(voucher.id);
+    setDate(voucher.date);
+    setAccountId(voucher.accountId);
+    setDetails(voucher.details);
+    setDebit(voucher.debit ? voucher.debit.toString() : '');
+    setCredit(voucher.credit ? voucher.credit.toString() : '');
+    setIsEditing(true);
   };
-
-  // Total debit and credit
-  const totalDebit = vouchers.reduce((sum, voucher) => sum + voucher.debit, 0);
-  const totalCredit = vouchers.reduce((sum, voucher) => sum + voucher.credit, 0);
-
+  
   return (
     <PageContainer 
-      title="Voucher Management" 
-      subtitle="Create and manage accounting vouchers"
+      title="Voucher" 
+      subtitle="Create and manage vouchers for financial transactions"
     >
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileSpreadsheet className="h-5 w-5" />
-              {isEditMode ? "Edit Voucher" : "Create Voucher"}
-            </CardTitle>
+            <CardTitle>{isEditing ? 'Edit Voucher' : 'New Voucher'}</CardTitle>
             <CardDescription>
-              Enter voucher details below
+              {isEditing 
+                ? 'Update voucher information' 
+                : 'Fill in the details to create a new voucher'}
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="id">Voucher No</Label>
-                  <Input 
-                    id="id" 
-                    name="id" 
-                    value={formData.id} 
-                    readOnly
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label>Date</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <CustomButton
-                        variant="outline3D"
-                        className="w-full justify-start text-left font-normal"
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {formData.date ? format(formData.date, "PPP") : "Select date..."}
-                      </CustomButton>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        selected={formData.date}
-                        onSelect={handleDateChange}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="accountId">Account</Label>
-                  <Select
-                    value={formData.accountId}
-                    onValueChange={handleAccountChange}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select account" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {accounts.map(account => (
-                        <SelectItem key={account.id} value={account.id}>
-                          {account.title}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="border rounded-md p-3 bg-muted/50">
-                  <Label className="block text-sm text-muted-foreground mb-1">Account Balance</Label>
-                  <span className="text-lg font-medium">${currentBalance.toLocaleString()}</span>
-                </div>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label htmlFor="voucherNo" className="block text-sm font-medium mb-1">Voucher No</label>
+                <input
+                  id="voucherNo"
+                  type="text"
+                  className="w-full p-2 rounded-md border border-input bg-muted"
+                  value={voucherNo}
+                  readOnly
+                />
               </div>
               
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="details">Details</Label>
-                  <Textarea
-                    id="details"
-                    name="details"
-                    value={formData.details}
-                    onChange={handleInputChange}
-                    placeholder="Enter transaction details"
-                    rows={3}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="debit">Debit</Label>
-                  <Input
-                    id="debit"
-                    name="debit"
-                    type="number"
-                    value={formData.debit === 0 ? '' : formData.debit}
-                    onChange={handleInputChange}
-                    placeholder="0.00"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="credit">Credit</Label>
-                  <Input
-                    id="credit"
-                    name="credit"
-                    type="number"
-                    value={formData.credit === 0 ? '' : formData.credit}
-                    onChange={handleInputChange}
-                    placeholder="0.00"
-                  />
-                </div>
+              <div>
+                <label htmlFor="date" className="block text-sm font-medium mb-1">Date *</label>
+                <input
+                  id="date"
+                  type="date"
+                  className="w-full p-2 rounded-md border border-input bg-background"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  required
+                />
               </div>
-            </div>
-          </CardContent>
-          <CardFooter className="flex flex-wrap justify-between">
-            <div className="flex gap-2 mb-4 sm:mb-0">
-              <CustomButton
-                variant="outline3D"
-                onClick={() => navigateVoucher('prev')}
-                disabled={currentVoucherIndex <= 0}
-              >
-                <ChevronLeft className="h-4 w-4" />
-                Previous
-              </CustomButton>
-              
-              <CustomButton
-                variant="outline3D"
-                onClick={() => navigateVoucher('next')}
-                disabled={currentVoucherIndex >= vouchers.length - 1}
-              >
-                Next
-                <ChevronRight className="h-4 w-4" />
-              </CustomButton>
             </div>
             
-            <div className="flex gap-2">
-              <CustomButton
-                variant="outline3D"
-                onClick={resetForm}
+            <div className="mb-4">
+              <label htmlFor="account" className="block text-sm font-medium mb-1">Title of Account *</label>
+              <select
+                id="account"
+                className="w-full p-2 rounded-md border border-input bg-background"
+                value={accountId}
+                onChange={(e) => setAccountId(e.target.value)}
+                required
               >
-                <Plus className="h-4 w-4" />
+                <option value="">-- Select Account --</option>
+                {mockAccounts.map((account) => (
+                  <option key={account.id} value={account.id}>{account.title}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="mb-4">
+              <label htmlFor="details" className="block text-sm font-medium mb-1">Details *</label>
+              <textarea
+                id="details"
+                className="w-full p-2 rounded-md border border-input bg-background min-h-[100px]"
+                value={details}
+                onChange={(e) => setDetails(e.target.value)}
+                required
+              />
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label htmlFor="debit" className="block text-sm font-medium mb-1">Debit</label>
+                <div className="relative">
+                  <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                  <input
+                    id="debit"
+                    type="number"
+                    className="w-full pl-10 p-2 rounded-md border border-input bg-background"
+                    value={debit}
+                    onChange={(e) => {
+                      setDebit(e.target.value);
+                      if (e.target.value) setCredit('');
+                    }}
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label htmlFor="credit" className="block text-sm font-medium mb-1">Credit</label>
+                <div className="relative">
+                  <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                  <input
+                    id="credit"
+                    type="number"
+                    className="w-full pl-10 p-2 rounded-md border border-input bg-background"
+                    value={credit}
+                    onChange={(e) => {
+                      setCredit(e.target.value);
+                      if (e.target.value) setDebit('');
+                    }}
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
+              <CustomButton 
+                onClick={handleNew} 
+                variant="outline3D"
+              >
+                <Plus className="h-4 w-4 mr-2" />
                 New
               </CustomButton>
               
-              <CustomButton
-                variant="outline3D"
-                onClick={handleEdit}
-                disabled={vouchers.length === 0}
+              <CustomButton 
+                onClick={handleSave} 
+                variant="premium"
               >
-                <Edit className="h-4 w-4" />
+                <Save className="h-4 w-4 mr-2" />
+                {isEditing ? 'Update' : 'Save'}
+              </CustomButton>
+              
+              <CustomButton 
+                onClick={handleEdit} 
+                variant="outline3D"
+                disabled={!currentVoucher}
+              >
+                <Edit className="h-4 w-4 mr-2" />
                 Edit
               </CustomButton>
               
-              <CustomButton
+              <CustomButton 
+                onClick={handleDelete} 
                 variant="outline3D"
-                onClick={handleDelete}
-                disabled={vouchers.length === 0}
+                className="text-destructive hover:text-destructive"
+                disabled={!currentVoucher || vouchers.length === 0}
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash className="h-4 w-4 mr-2" />
                 Delete
               </CustomButton>
               
-              <CustomButton
-                onClick={handleSave}
+              <CustomButton 
+                onClick={handleBack} 
+                variant="outline3D"
+                disabled={currentIndex === 0 || vouchers.length === 0}
               >
-                <Save className="h-4 w-4" />
-                {isEditMode ? "Update" : "Save"}
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back
+              </CustomButton>
+              
+              <CustomButton 
+                onClick={handleNext} 
+                variant="outline3D"
+                disabled={currentIndex >= vouchers.length - 1 || vouchers.length === 0}
+              >
+                <ArrowRight className="h-4 w-4 mr-2" />
+                Next
               </CustomButton>
             </div>
-          </CardFooter>
+          </CardContent>
         </Card>
         
-        <Card className="h-fit">
+        <Card>
           <CardHeader>
-            <CardTitle>Recent Vouchers</CardTitle>
-            <CardDescription>
-              Latest transaction entries
-            </CardDescription>
+            <CardTitle>Account Summary</CardTitle>
+            <CardDescription>Financial summary for selected account</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="rounded-md border overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>ID</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Account</TableHead>
-                    <TableHead className="text-right">Debit</TableHead>
-                    <TableHead className="text-right">Credit</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {vouchers.length > 0 ? (
-                    vouchers.map((voucher, index) => (
-                      <TableRow 
-                        key={voucher.id}
-                        className={index === currentVoucherIndex ? "bg-muted" : ""}
-                        onClick={() => {
-                          setCurrentVoucherIndex(index);
-                          loadVoucher(index);
-                        }}
-                      >
-                        <TableCell>{voucher.id}</TableCell>
-                        <TableCell>{format(voucher.date, "MM/dd/yyyy")}</TableCell>
-                        <TableCell>{voucher.accountTitle}</TableCell>
-                        <TableCell className="text-right">{voucher.debit > 0 ? `$${voucher.debit.toLocaleString()}` : '-'}</TableCell>
-                        <TableCell className="text-right">{voucher.credit > 0 ? `$${voucher.credit.toLocaleString()}` : '-'}</TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center py-4">
-                        No vouchers found
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+          <CardContent className="space-y-4">
+            <div className="p-4 border rounded-md bg-muted/10">
+              <div className="flex justify-between mb-2">
+                <span className="font-medium">Account Balance:</span>
+                <span className="font-bold">${accountBalance.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between mb-2">
+                <span className="font-medium">Total Debit:</span>
+                <span className="font-bold text-red-500">${totalDebit.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-medium">Total Credit:</span>
+                <span className="font-bold text-green-500">${totalCredit.toLocaleString()}</span>
+              </div>
             </div>
             
-            <div className="mt-4 space-y-3">
-              <div className="flex justify-between px-2 font-medium">
-                <span>Total Debit:</span>
-                <span>${totalDebit.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between px-2 font-medium">
-                <span>Total Credit:</span>
-                <span>${totalCredit.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between px-2 pt-2 border-t font-semibold">
-                <span>Balance:</span>
-                <span>${Math.abs(totalDebit - totalCredit).toLocaleString()}</span>
+            <div className="rounded-md border">
+              <div className="bg-muted/50 px-4 py-2 font-medium">Recent Vouchers</div>
+              <div className="divide-y">
+                {vouchers.slice(-5).map((voucher, index) => (
+                  <div key={voucher.id} className="p-3 hover:bg-muted/10 cursor-pointer" onClick={() => handleLoadVoucher(vouchers.indexOf(voucher))}>
+                    <div className="flex justify-between mb-1">
+                      <span className="font-semibold">{voucher.id}</span>
+                      <span>{voucher.date}</span>
+                    </div>
+                    <div className="text-sm text-muted-foreground mb-1 truncate">{voucher.accountTitle}</div>
+                    <div className="text-sm text-muted-foreground mb-2 truncate">{voucher.details}</div>
+                    <div className="flex justify-between">
+                      {voucher.debit > 0 && (
+                        <span className="text-red-500 font-medium">Dr: ${voucher.debit.toLocaleString()}</span>
+                      )}
+                      {voucher.credit > 0 && (
+                        <span className="text-green-500 font-medium">Cr: ${voucher.credit.toLocaleString()}</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                
+                {vouchers.length === 0 && (
+                  <div className="p-4 text-center text-muted-foreground">
+                    No vouchers found
+                  </div>
+                )}
               </div>
             </div>
+            
+            <CustomButton 
+              variant="outline3D"
+              className="w-full"
+            >
+              <FileText className="h-4 w-4 mr-2" />
+              View All Vouchers
+            </CustomButton>
           </CardContent>
         </Card>
       </div>

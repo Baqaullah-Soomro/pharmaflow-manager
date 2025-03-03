@@ -1,464 +1,577 @@
 
 import React, { useState } from 'react';
+import { RefreshCw, Search, Calendar, Save, Edit, Trash, FileText, Plus } from 'lucide-react';
 import PageContainer from '@/components/ui/PageContainer';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { CustomButton } from '@/components/ui/CustomButton';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { useToast } from '@/hooks/use-toast';
-import { 
-  RefreshCw, 
-  Calendar as CalendarIcon, 
-  Search, 
-  Plus, 
-  Save, 
-  Edit, 
-  Trash2, 
-  FileText
-} from 'lucide-react';
-import { format } from 'date-fns';
 import SearchInput from '@/components/ui/SearchInput';
+import { toast } from "@/hooks/use-toast";
 
-// Mock data
-const accounts = [
-  { id: 'SUP001', title: 'ABC Pharma', balance: 25000 },
-  { id: 'SUP002', title: 'MedTech Labs', balance: 36500 },
-  { id: 'SUP003', title: 'Healthcare Solutions', balance: 12750 },
-  { id: 'SUP004', title: 'Vital Meds Inc.', balance: 48900 },
-  { id: 'SUP005', title: 'PharmaCare', balance: 8300 },
+// Mock data for suppliers and companies
+const suppliers = [
+  { id: 'SUP001', name: 'MediSupply Co' },
+  { id: 'SUP002', name: 'PharmaCare Distributors' },
+  { id: 'SUP003', name: 'Healthcare Wholesale' },
+  { id: 'SUP004', name: 'Medical Instruments Ltd' },
 ];
 
-const companies = ['ABC Pharma', 'MedTech Labs', 'Healthcare Solutions', 'Vital Meds Inc.', 'PharmaCare'];
+const companies = ['MediCorp', 'PharmaSolutions', 'HealthTech', 'MediGlobal', 'BioLife'];
 
-const items = [
-  { code: 'ITEM001', name: 'Paracetamol', company: 'ABC Pharma', packing: '10x10', price: 12.50 },
-  { code: 'ITEM002', name: 'Amoxicillin', company: 'MedTech Labs', packing: '5x10', price: 25.75 },
-  { code: 'ITEM003', name: 'Ibuprofen', company: 'Healthcare Solutions', packing: '10x10', price: 15.20 },
-  { code: 'ITEM004', name: 'Aspirin', company: 'Vital Meds Inc.', packing: '10x15', price: 10.80 },
-  { code: 'ITEM005', name: 'Diclofenac', company: 'PharmaCare', packing: '5x10', price: 18.90 },
-  { code: 'ITEM006', name: 'Metformin', company: 'ABC Pharma', packing: '10x10', price: 22.40 },
-  { code: 'ITEM007', name: 'Atorvastatin', company: 'MedTech Labs', packing: '3x10', price: 45.60 },
-  { code: 'ITEM008', name: 'Omeprazole', company: 'Healthcare Solutions', packing: '2x10', price: 30.25 },
-  { code: 'ITEM009', name: 'Losartan', company: 'Vital Meds Inc.', packing: '3x10', price: 28.70 },
-  { code: 'ITEM010', name: 'Amlodipine', company: 'PharmaCare', packing: '5x10', price: 20.15 },
+// Mock inventory data
+const mockInventory = [
+  { id: 1, itemCode: 'MED001', company: 'MediCorp', itemName: 'Paracetamol 500mg', packing: '10x10', price: 5.50 },
+  { id: 2, itemCode: 'MED002', company: 'PharmaSolutions', itemName: 'Amoxicillin 250mg', packing: '6x10', price: 8.75 },
+  { id: 3, itemCode: 'MED003', company: 'HealthTech', itemName: 'Vitamin C 1000mg', packing: '3x10', price: 12.25 },
+  { id: 4, itemCode: 'MED004', company: 'MediGlobal', itemName: 'Flu Vaccine', packing: '1x10', price: 45.00 },
+  { id: 5, itemCode: 'MED005', company: 'BioLife', itemName: 'Digital Thermometer', packing: '1x1', price: 15.50 },
 ];
 
-// Purchase invoices
-const purchaseInvoices = [
-  { id: 'PUR001', date: new Date('2023-09-15'), supplier: 'SUP001', items: [
-    { ...items[0], quantity: 200, bonus: 20 },
-    { ...items[5], quantity: 150, bonus: 15 },
-  ]},
-  { id: 'PUR002', date: new Date('2023-09-18'), supplier: 'SUP002', items: [
-    { ...items[1], quantity: 180, bonus: 18 },
-    { ...items[6], quantity: 120, bonus: 12 },
-  ]},
-  { id: 'PUR003', date: new Date('2023-09-20'), supplier: 'SUP003', items: [
-    { ...items[2], quantity: 220, bonus: 22 },
-    { ...items[7], quantity: 100, bonus: 10 },
-  ]},
-  { id: 'PUR004', date: new Date('2023-09-25'), supplier: 'SUP004', items: [
-    { ...items[3], quantity: 250, bonus: 25 },
-    { ...items[8], quantity: 130, bonus: 13 },
-  ]},
-  { id: 'PUR005', date: new Date('2023-09-30'), supplier: 'SUP005', items: [
-    { ...items[4], quantity: 190, bonus: 19 },
-    { ...items[9], quantity: 140, bonus: 14 },
-  ]},
+// Mock purchase invoice data
+const mockPurchaseInvoices = [
+  { id: 'PI001', supplier: 'SUP001', date: '2023-04-10', biltyNo: 'B001', amount: 5000 },
+  { id: 'PI002', supplier: 'SUP002', date: '2023-04-12', biltyNo: 'B002', amount: 7500 },
+  { id: 'PI003', supplier: 'SUP003', date: '2023-04-14', biltyNo: 'B003', amount: 3200 },
+  { id: 'PI004', supplier: 'SUP001', date: '2023-04-15', biltyNo: 'B004', amount: 6800 },
 ];
+
+// Interface for return items
+interface ReturnItem {
+  id: string;
+  itemCode: string;
+  company: string;
+  itemName: string;
+  packing: string;
+  purchaseQty: number;
+  purchaseBonus: number;
+  returnQty: number;
+  returnBonus: number;
+  price: number;
+  amount: number;
+}
 
 const PurchaseReturn = () => {
-  const { toast } = useToast();
-  const [returnId, setReturnId] = useState('RET001');
-  const [date, setDate] = useState<Date>(new Date());
-  const [selectedAccount, setSelectedAccount] = useState('');
-  const [selectedPurchaseInvoice, setSelectedPurchaseInvoice] = useState('');
+  // Form state
+  const [invoiceNo, setInvoiceNo] = useState('PR001');
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [accountId, setAccountId] = useState('');
   const [biltyNo, setBiltyNo] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [returnItems, setReturnItems] = useState<any[]>([]);
+  const [purchaseInvoiceNo, setPurchaseInvoiceNo] = useState('');
+  const [discount, setDiscount] = useState('0');
   
-  // Financial calculations
-  const [discount, setDiscount] = useState(0);
-  const [previousBalance, setPreviousBalance] = useState(0);
-
-  const handleAccountChange = (accountId: string) => {
-    setSelectedAccount(accountId);
-    const account = accounts.find(acc => acc.id === accountId);
-    if (account) {
-      setPreviousBalance(account.balance);
-    } else {
-      setPreviousBalance(0);
+  // Item selection state
+  const [itemCode, setItemCode] = useState('');
+  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [purchaseQty, setPurchaseQty] = useState('0');
+  const [purchaseBonus, setPurchaseBonus] = useState('0');
+  const [returnQty, setReturnQty] = useState('0');
+  const [returnBonus, setReturnBonus] = useState('0');
+  
+  // Return items
+  const [returnItems, setReturnItems] = useState<ReturnItem[]>([]);
+  
+  // Supplier details
+  const [supplierBalance, setSupplierBalance] = useState(15000);
+  
+  // Handle item selection
+  const handleItemSelect = (code: string) => {
+    const item = mockInventory.find(i => i.itemCode === code);
+    if (item) {
+      setSelectedItem(item);
+      setItemCode(item.itemCode);
+      // In a real app, you would fetch the purchase qty and bonus from the selected invoice
+      setPurchaseQty('10');
+      setPurchaseBonus('2');
+      setReturnQty('0');
+      setReturnBonus('0');
     }
   };
-
-  const handlePurchaseInvoiceChange = (invoiceId: string) => {
-    setSelectedPurchaseInvoice(invoiceId);
-    const invoice = purchaseInvoices.find(inv => inv.id === invoiceId);
-    if (invoice) {
-      // Map invoice items to return items with 0 return quantity and bonus
-      const mappedItems = invoice.items.map(item => ({
-        ...item,
-        returnQuantity: 0,
-        returnBonus: 0,
-        amount: 0
-      }));
-      setReturnItems(mappedItems);
-    } else {
-      setReturnItems([]);
-    }
-  };
-
-  const handleItemChange = (index: number, field: string, value: number) => {
-    const updatedItems = [...returnItems];
-    
-    // Update the specified field
-    updatedItems[index] = {
-      ...updatedItems[index],
-      [field]: value
-    };
-    
-    // Recalculate amount
-    if (field === 'returnQuantity' || field === 'returnBonus') {
-      updatedItems[index].amount = updatedItems[index].returnQuantity * updatedItems[index].price;
-    }
-    
-    setReturnItems(updatedItems);
-  };
-
-  const getTotalReturnAmount = () => {
-    return returnItems.reduce((total, item) => total + (item.amount || 0), 0);
-  };
-
-  const getNetReturnBill = () => {
-    const total = getTotalReturnAmount();
-    return total - discount;
-  };
-
-  const getBalance = () => {
-    return previousBalance - getNetReturnBill();
-  };
-
-  const handleSave = () => {
-    // Validation
-    if (!selectedAccount) {
+  
+  // Handle adding item to return
+  const handleAddItem = () => {
+    if (!selectedItem) {
       toast({
-        title: "Validation Error",
-        description: "Please select a supplier account.",
+        title: "Error",
+        description: "Please select an item first.",
         variant: "destructive"
       });
       return;
     }
-
-    if (!selectedPurchaseInvoice) {
+    
+    if (parseInt(returnQty) <= 0) {
       toast({
-        title: "Validation Error",
+        title: "Error",
+        description: "Return quantity must be greater than zero.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (parseInt(returnQty) > parseInt(purchaseQty)) {
+      toast({
+        title: "Error",
+        description: "Return quantity cannot exceed purchase quantity.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    const amount = parseInt(returnQty) * selectedItem.price;
+    
+    const newItem: ReturnItem = {
+      id: Date.now().toString(),
+      itemCode: selectedItem.itemCode,
+      company: selectedItem.company,
+      itemName: selectedItem.itemName,
+      packing: selectedItem.packing,
+      purchaseQty: parseInt(purchaseQty),
+      purchaseBonus: parseInt(purchaseBonus),
+      returnQty: parseInt(returnQty),
+      returnBonus: parseInt(returnBonus),
+      price: selectedItem.price,
+      amount
+    };
+    
+    setReturnItems([...returnItems, newItem]);
+    
+    // Reset selection
+    setItemCode('');
+    setSelectedItem(null);
+    setPurchaseQty('0');
+    setPurchaseBonus('0');
+    setReturnQty('0');
+    setReturnBonus('0');
+    
+    toast({
+      title: "Success",
+      description: "Item added to return list.",
+    });
+  };
+  
+  // Handle removing item from return
+  const handleRemoveItem = (id: string) => {
+    setReturnItems(returnItems.filter(item => item.id !== id));
+    toast({
+      description: "Item removed from return list.",
+    });
+  };
+  
+  // Calculate totals
+  const netReturnAmount = returnItems.reduce((sum, item) => sum + item.amount, 0);
+  const discountAmount = parseFloat(discount) > 0 ? (netReturnAmount * parseFloat(discount) / 100) : 0;
+  const finalAmount = netReturnAmount - discountAmount;
+  const newBalance = supplierBalance - finalAmount;
+  
+  // Handle save return
+  const handleSaveReturn = () => {
+    if (!accountId) {
+      toast({
+        title: "Error",
+        description: "Please select a supplier.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (!purchaseInvoiceNo) {
+      toast({
+        title: "Error",
         description: "Please select a purchase invoice.",
         variant: "destructive"
       });
       return;
     }
-
-    const hasReturns = returnItems.some(item => item.returnQuantity > 0 || item.returnBonus > 0);
-    if (!hasReturns) {
+    
+    if (returnItems.length === 0) {
       toast({
-        title: "Validation Error",
-        description: "Please enter return quantity or bonus for at least one item.",
+        title: "Error",
+        description: "Please add at least one item to return.",
         variant: "destructive"
       });
       return;
     }
-
-    // Process the return (in a real app, this would save to database)
+    
+    // In a real app, you would save the return to the database
     toast({
       title: "Success",
-      description: `Purchase return ${returnId} has been processed.`
+      description: "Purchase return has been saved successfully.",
     });
-
-    // Increment the return ID for next return
-    const nextId = `RET${String(parseInt(returnId.replace('RET', '')) + 1).padStart(3, '0')}`;
-    setReturnId(nextId);
+    
+    // Generate new invoice number for next return
+    setInvoiceNo(`PR${String(parseInt(invoiceNo.substring(2)) + 1).padStart(3, '0')}`);
     
     // Reset form
-    setDate(new Date());
-    setSelectedAccount('');
-    setSelectedPurchaseInvoice('');
+    setDate(new Date().toISOString().split('T')[0]);
+    setAccountId('');
     setBiltyNo('');
+    setPurchaseInvoiceNo('');
+    setDiscount('0');
     setReturnItems([]);
-    setDiscount(0);
-    setPreviousBalance(0);
   };
-
-  const filteredInvoices = selectedAccount 
-    ? purchaseInvoices.filter(invoice => invoice.supplier === selectedAccount)
-    : [];
-
+  
   return (
     <PageContainer 
       title="Purchase Return" 
-      subtitle="Process returns to suppliers"
+      subtitle="Process and manage returns to suppliers"
     >
-      <div className="space-y-6">
+      <div className="space-y-8">
+        {/* Return Header */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <RefreshCw className="h-5 w-5" />
-              Purchase Return
-            </CardTitle>
-            <CardDescription>
-              Process and manage returns to suppliers
-            </CardDescription>
+            <CardTitle>Return Details</CardTitle>
+            <CardDescription>Enter return information</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="returnId">Return Invoice No</Label>
-                  <Input 
-                    id="returnId" 
-                    value={returnId} 
-                    readOnly
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label>Date</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <CustomButton
-                        variant="outline3D"
-                        className="w-full justify-start text-left font-normal"
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {format(date, "PPP")}
-                      </CustomButton>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        selected={date}
-                        onSelect={(date) => date && setDate(date)}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="accountId">Account ID</Label>
-                  <Select
-                    value={selectedAccount}
-                    onValueChange={handleAccountChange}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select supplier" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {accounts.map(account => (
-                        <SelectItem key={account.id} value={account.id}>
-                          {account.id} - {account.title}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="biltyNo">Bilty No</Label>
-                  <Input 
-                    id="biltyNo" 
-                    value={biltyNo} 
-                    onChange={(e) => setBiltyNo(e.target.value)}
-                    placeholder="Enter bilty number"
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label htmlFor="invoiceNo" className="block text-sm font-medium mb-1">Invoice No</label>
+                <input
+                  id="invoiceNo"
+                  type="text"
+                  className="w-full p-2 rounded-md border border-input bg-muted"
+                  value={invoiceNo}
+                  readOnly
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="date" className="block text-sm font-medium mb-1">Date</label>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                  <input
+                    id="date"
+                    type="date"
+                    className="w-full pl-10 p-2 rounded-md border border-input bg-background"
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
                   />
                 </div>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="purchaseInvoice">Purchase Invoice No</Label>
-                  <Select
-                    value={selectedPurchaseInvoice}
-                    onValueChange={handlePurchaseInvoiceChange}
-                    disabled={!selectedAccount}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={selectedAccount ? "Select invoice" : "Select account first"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {filteredInvoices.map(invoice => (
-                        <SelectItem key={invoice.id} value={invoice.id}>
-                          {invoice.id} - {format(invoice.date, "MM/dd/yyyy")}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label>Search Items</Label>
-                  <SearchInput 
-                    value={searchQuery} 
-                    onChange={setSearchQuery} 
-                    placeholder="Search by item code or name..."
-                  />
+              <div>
+                <label htmlFor="accountId" className="block text-sm font-medium mb-1">Account ID</label>
+                <select
+                  id="accountId"
+                  className="w-full p-2 rounded-md border border-input bg-background"
+                  value={accountId}
+                  onChange={(e) => {
+                    setAccountId(e.target.value);
+                    // In a real app, you would fetch supplier balance based on selected supplier
+                    setSupplierBalance(15000);
+                  }}
+                >
+                  <option value="">-- Select Supplier --</option>
+                  {suppliers.map((supplier) => (
+                    <option key={supplier.id} value={supplier.id}>{supplier.name}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div>
+                <label htmlFor="biltyNo" className="block text-sm font-medium mb-1">Bilty No</label>
+                <input
+                  id="biltyNo"
+                  type="text"
+                  className="w-full p-2 rounded-md border border-input bg-background"
+                  value={biltyNo}
+                  onChange={(e) => setBiltyNo(e.target.value)}
+                  placeholder="Enter bilty number"
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="purchaseInvoiceNo" className="block text-sm font-medium mb-1">Purchase Invoice No</label>
+                <select
+                  id="purchaseInvoiceNo"
+                  className="w-full p-2 rounded-md border border-input bg-background"
+                  value={purchaseInvoiceNo}
+                  onChange={(e) => setPurchaseInvoiceNo(e.target.value)}
+                >
+                  <option value="">-- Select Invoice --</option>
+                  {mockPurchaseInvoices.map((invoice) => (
+                    <option key={invoice.id} value={invoice.id}>
+                      {invoice.id} - {invoice.date} (${invoice.amount})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              <div>
+                <label htmlFor="discount" className="block text-sm font-medium mb-1">Discount %</label>
+                <input
+                  id="discount"
+                  type="number"
+                  className="w-full p-2 rounded-md border border-input bg-background"
+                  value={discount}
+                  onChange={(e) => setDiscount(e.target.value)}
+                  min="0"
+                  max="100"
+                  step="0.01"
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        {/* Item Selection */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Item Selection</CardTitle>
+            <CardDescription>Select items to return</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+              <div>
+                <label htmlFor="itemCode" className="block text-sm font-medium mb-1">Item Code</label>
+                <select
+                  id="itemCode"
+                  className="w-full p-2 rounded-md border border-input bg-background"
+                  value={itemCode}
+                  onChange={(e) => handleItemSelect(e.target.value)}
+                >
+                  <option value="">-- Select Item --</option>
+                  {mockInventory.map((item) => (
+                    <option key={item.id} value={item.itemCode}>
+                      {item.itemCode} - {item.itemName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              <div>
+                <label htmlFor="company" className="block text-sm font-medium mb-1">Company</label>
+                <input
+                  id="company"
+                  type="text"
+                  className="w-full p-2 rounded-md border border-input bg-muted"
+                  value={selectedItem?.company || ''}
+                  readOnly
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="itemName" className="block text-sm font-medium mb-1">Item Name</label>
+                <input
+                  id="itemName"
+                  type="text"
+                  className="w-full p-2 rounded-md border border-input bg-muted"
+                  value={selectedItem?.itemName || ''}
+                  readOnly
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="packing" className="block text-sm font-medium mb-1">Packing</label>
+                <input
+                  id="packing"
+                  type="text"
+                  className="w-full p-2 rounded-md border border-input bg-muted"
+                  value={selectedItem?.packing || ''}
+                  readOnly
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="purchaseQty" className="block text-sm font-medium mb-1">Product Quantity</label>
+                <input
+                  id="purchaseQty"
+                  type="number"
+                  className="w-full p-2 rounded-md border border-input bg-muted"
+                  value={purchaseQty}
+                  readOnly
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="purchaseBonus" className="block text-sm font-medium mb-1">Product Bonus</label>
+                <input
+                  id="purchaseBonus"
+                  type="number"
+                  className="w-full p-2 rounded-md border border-input bg-muted"
+                  value={purchaseBonus}
+                  readOnly
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="returnQty" className="block text-sm font-medium mb-1">Return Quantity</label>
+                <input
+                  id="returnQty"
+                  type="number"
+                  className="w-full p-2 rounded-md border border-input bg-background"
+                  value={returnQty}
+                  onChange={(e) => setReturnQty(e.target.value)}
+                  min="0"
+                  max={purchaseQty}
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="returnBonus" className="block text-sm font-medium mb-1">Return Bonus</label>
+                <input
+                  id="returnBonus"
+                  type="number"
+                  className="w-full p-2 rounded-md border border-input bg-background"
+                  value={returnBonus}
+                  onChange={(e) => setReturnBonus(e.target.value)}
+                  min="0"
+                  max={purchaseBonus}
+                />
+              </div>
+            </div>
+            
+            <div className="flex justify-end">
+              <CustomButton 
+                onClick={handleAddItem} 
+                variant="premium"
+                disabled={!selectedItem || parseInt(returnQty) <= 0}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Item
+              </CustomButton>
+            </div>
+          </CardContent>
+        </Card>
+        
+        {/* Return Items Table */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Return Items</CardTitle>
+            <CardDescription>Items to be returned</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="bg-muted/50">
+                    <th className="px-3 py-2 text-left">Item Code</th>
+                    <th className="px-3 py-2 text-left">Company</th>
+                    <th className="px-3 py-2 text-left">Item Name</th>
+                    <th className="px-3 py-2 text-center">Packing</th>
+                    <th className="px-3 py-2 text-center">Pur. Qty</th>
+                    <th className="px-3 py-2 text-center">Pur. Bonus</th>
+                    <th className="px-3 py-2 text-center">Ret. Qty</th>
+                    <th className="px-3 py-2 text-center">Ret. Bonus</th>
+                    <th className="px-3 py-2 text-right">Price</th>
+                    <th className="px-3 py-2 text-right">Amount</th>
+                    <th className="px-3 py-2 text-center">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {returnItems.length > 0 ? (
+                    returnItems.map((item, index) => (
+                      <tr key={item.id} className={index % 2 === 0 ? 'bg-background' : 'bg-muted/20'}>
+                        <td className="px-3 py-2">{item.itemCode}</td>
+                        <td className="px-3 py-2">{item.company}</td>
+                        <td className="px-3 py-2">{item.itemName}</td>
+                        <td className="px-3 py-2 text-center">{item.packing}</td>
+                        <td className="px-3 py-2 text-center">{item.purchaseQty}</td>
+                        <td className="px-3 py-2 text-center">{item.purchaseBonus}</td>
+                        <td className="px-3 py-2 text-center font-semibold">{item.returnQty}</td>
+                        <td className="px-3 py-2 text-center">{item.returnBonus}</td>
+                        <td className="px-3 py-2 text-right">${item.price.toFixed(2)}</td>
+                        <td className="px-3 py-2 text-right font-semibold">${item.amount.toFixed(2)}</td>
+                        <td className="px-3 py-2 text-center">
+                          <CustomButton 
+                            onClick={() => handleRemoveItem(item.id)} 
+                            variant="outline3D"
+                            size="sm"
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash className="h-4 w-4" />
+                          </CustomButton>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={11} className="px-4 py-4 text-center text-muted-foreground">
+                        No items added to return
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+                {returnItems.length > 0 && (
+                  <tfoot>
+                    <tr className="bg-muted/80 font-semibold">
+                      <td colSpan={9} className="px-3 py-2 text-right">Net Return Bill:</td>
+                      <td className="px-3 py-2 text-right">${netReturnAmount.toFixed(2)}</td>
+                      <td></td>
+                    </tr>
+                    <tr className="bg-muted/60">
+                      <td colSpan={9} className="px-3 py-2 text-right">Discount ({discount}%):</td>
+                      <td className="px-3 py-2 text-right">${discountAmount.toFixed(2)}</td>
+                      <td></td>
+                    </tr>
+                    <tr className="bg-muted/80 font-semibold">
+                      <td colSpan={9} className="px-3 py-2 text-right">Final Amount:</td>
+                      <td className="px-3 py-2 text-right">${finalAmount.toFixed(2)}</td>
+                      <td></td>
+                    </tr>
+                  </tfoot>
+                )}
+              </table>
+            </div>
+            
+            {/* Summary and Actions */}
+            <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:order-2">
+                <div className="p-4 border rounded-md bg-muted/10 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Net Return Bill:</span>
+                    <span className="font-medium">${netReturnAmount.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Discount ({discount}%):</span>
+                    <span className="font-medium">${discountAmount.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between font-medium">
+                    <span>Previous Balance:</span>
+                    <span>${supplierBalance.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between font-bold pt-2 border-t">
+                    <span>Balance:</span>
+                    <span>${newBalance.toFixed(2)}</span>
+                  </div>
                 </div>
               </div>
               
-              <div className="rounded-md border overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Item Code</TableHead>
-                      <TableHead>Company</TableHead>
-                      <TableHead>Item Name</TableHead>
-                      <TableHead>Packing</TableHead>
-                      <TableHead className="text-right">Price</TableHead>
-                      <TableHead className="text-center">Purchased Qty</TableHead>
-                      <TableHead className="text-center">Purchased Bonus</TableHead>
-                      <TableHead className="text-center">Return Qty</TableHead>
-                      <TableHead className="text-center">Return Bonus</TableHead>
-                      <TableHead className="text-right">Amount</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {returnItems.length > 0 ? (
-                      returnItems
-                        .filter(item => 
-                          searchQuery === '' || 
-                          item.code.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          item.name.toLowerCase().includes(searchQuery.toLowerCase())
-                        )
-                        .map((item, index) => (
-                          <TableRow key={item.code}>
-                            <TableCell>{item.code}</TableCell>
-                            <TableCell>{item.company}</TableCell>
-                            <TableCell>{item.name}</TableCell>
-                            <TableCell>{item.packing}</TableCell>
-                            <TableCell className="text-right">${item.price.toFixed(2)}</TableCell>
-                            <TableCell className="text-center">{item.quantity}</TableCell>
-                            <TableCell className="text-center">{item.bonus}</TableCell>
-                            <TableCell>
-                              <Input
-                                type="number"
-                                min="0"
-                                max={item.quantity}
-                                value={item.returnQuantity}
-                                onChange={(e) => handleItemChange(index, 'returnQuantity', parseInt(e.target.value) || 0)}
-                                className="text-center w-20 mx-auto"
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <Input
-                                type="number"
-                                min="0"
-                                max={item.bonus}
-                                value={item.returnBonus}
-                                onChange={(e) => handleItemChange(index, 'returnBonus', parseInt(e.target.value) || 0)}
-                                className="text-center w-20 mx-auto"
-                              />
-                            </TableCell>
-                            <TableCell className="text-right">${item.amount?.toFixed(2) || '0.00'}</TableCell>
-                          </TableRow>
-                        ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={10} className="text-center py-4">
-                          {selectedPurchaseInvoice ? "No items in this purchase invoice" : "Select a purchase invoice to display items"}
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="md:col-span-2 space-y-4">
-                  <div className="flex flex-wrap gap-3">
-                    <CustomButton
-                      variant="outline3D"
-                      onClick={() => {
-                        // Clear form for new return
-                        setDate(new Date());
-                        setSelectedAccount('');
-                        setSelectedPurchaseInvoice('');
-                        setBiltyNo('');
-                        setReturnItems([]);
-                        setDiscount(0);
-                        setPreviousBalance(0);
-                      }}
-                    >
-                      <Plus className="h-4 w-4" />
-                      New
-                    </CustomButton>
-                    
-                    <CustomButton
-                      variant="outline3D"
-                      onClick={() => {
-                        toast({
-                          title: "Edit",
-                          description: "Edit functionality will be implemented here."
-                        });
-                      }}
-                    >
-                      <Edit className="h-4 w-4" />
-                      Edit
-                    </CustomButton>
-                    
-                    <CustomButton
-                      variant="outline3D"
-                      onClick={() => {
-                        toast({
-                          title: "Delete",
-                          description: "Delete functionality will be implemented here."
-                        });
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      Delete
-                    </CustomButton>
-                    
-                    <CustomButton
-                      onClick={handleSave}
-                    >
-                      <Save className="h-4 w-4" />
-                      Update
-                    </CustomButton>
-                  </div>
-                </div>
+              <div className="flex flex-wrap gap-2 md:order-1">
+                <CustomButton 
+                  onClick={handleSaveReturn} 
+                  variant="premium"
+                  disabled={returnItems.length === 0 || !accountId || !purchaseInvoiceNo}
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Return
+                </CustomButton>
                 
-                <div className="space-y-4 border rounded-md p-4 bg-muted/20">
-                  <div className="space-y-2">
-                    <Label htmlFor="discount">Discount</Label>
-                    <Input
-                      id="discount"
-                      type="number"
-                      min="0"
-                      value={discount}
-                      onChange={(e) => setDiscount(Number(e.target.value) || 0)}
-                    />
-                  </div>
-                  
-                  <div className="space-y-4">
-                    <div className="flex justify-between">
-                      <span className="font-medium">Net Return Bill:</span>
-                      <span className="font-semibold">${getNetReturnBill().toFixed(2)}</span>
-                    </div>
-                    
-                    <div className="flex justify-between">
-                      <span className="font-medium">Previous Balance:</span>
-                      <span className="font-medium">${previousBalance.toFixed(2)}</span>
-                    </div>
-                    
-                    <div className="flex justify-between pt-2 border-t">
-                      <span className="font-semibold">Balance:</span>
-                      <span className="font-semibold">${getBalance().toFixed(2)}</span>
-                    </div>
-                  </div>
-                </div>
+                <CustomButton 
+                  variant="outline3D"
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
+                </CustomButton>
+                
+                <CustomButton 
+                  variant="outline3D"
+                >
+                  <Trash className="h-4 w-4 mr-2" />
+                  Delete
+                </CustomButton>
+                
+                <CustomButton 
+                  variant="outline3D"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  New
+                </CustomButton>
+                
+                <CustomButton 
+                  variant="outline3D"
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  Print Bill
+                </CustomButton>
               </div>
             </div>
           </CardContent>

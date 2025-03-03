@@ -1,163 +1,156 @@
 
 import React, { useState } from 'react';
-import { Plus, Save, Search, Edit, RefreshCw, FileSearch, ArrowRight } from 'lucide-react';
+import { 
+  Plus, 
+  Save, 
+  Search, 
+  Edit, 
+  ArrowRight,
+  FileSearch
+} from 'lucide-react';
 import PageContainer from '@/components/ui/PageContainer';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CustomButton } from '@/components/ui/CustomButton';
 import SearchInput from '@/components/ui/SearchInput';
 import { useToast } from '@/components/ui/use-toast';
 
-// Mock data for cash book entries
-const mockCashEntries = [
-  { id: 1, date: '2024-05-01', city: 'New York', name: 'Memorial Hospital', receipt: 1500.00, payment: 0, details: 'Payment received for invoice #1234', prevBalance: 5000.00, balance: 6500.00, cashAccount: 'Main Cash' },
-  { id: 2, date: '2024-05-02', city: 'Chicago', name: 'City Clinic', receipt: 0, payment: 350.75, details: 'Office supplies', prevBalance: 3500.00, balance: 3149.25, cashAccount: 'Petty Cash' },
-  { id: 3, date: '2024-05-03', city: 'Los Angeles', name: 'Riverside Medical', receipt: 2200.50, payment: 0, details: 'Payment for outstanding balance', prevBalance: 12000.00, balance: 14200.50, cashAccount: 'Main Cash' },
-  { id: 4, date: '2024-05-04', city: 'Dallas', name: 'MediSuppliers', receipt: 0, payment: 875.25, details: 'Medical equipment purchase', prevBalance: 0, balance: -875.25, cashAccount: 'Main Cash' },
-  { id: 5, date: '2024-05-05', city: 'New York', name: 'Lakeside Pharmacy', receipt: 450.00, payment: 0, details: 'Partial payment for invoice #5678', prevBalance: 2800.00, balance: 3250.00, cashAccount: 'Main Cash' },
+// Mock data for cash transactions
+const mockTransactions = [
+  { id: 1, date: '2024-04-01', city: 'Lahore', name: 'Memorial Hospital', receipt: 5000, payment: 0, details: 'Payment received for Invoice #1001', previousBalance: 12000, balanceAmount: 7000, cashAccount: 'Main Account' },
+  { id: 2, date: '2024-04-02', city: 'Karachi', name: 'City Clinic', receipt: 0, payment: 2500, details: 'Payment for supplies', previousBalance: 3500, balanceAmount: 6000, cashAccount: 'Main Account' },
+  { id: 3, date: '2024-04-05', city: 'Islamabad', name: 'Riverside Medical', receipt: 7500, payment: 0, details: 'Payment received for Invoice #1002', previousBalance: 20000, balanceAmount: 12500, cashAccount: 'Secondary Account' },
+  { id: 4, date: '2024-04-10', city: 'Rawalpindi', name: 'Lakeside Pharmacy', receipt: 0, payment: 4000, details: 'Monthly rent payment', previousBalance: 0, balanceAmount: 4000, cashAccount: 'Main Account' },
+  { id: 5, date: '2024-04-15', city: 'Lahore', name: 'General Hospital', receipt: 9000, payment: 0, details: 'Payment received for Invoice #1003', previousBalance: 15000, balanceAmount: 6000, cashAccount: 'Main Account' },
 ];
 
-// Mock data for salesmen, cities, areas, and supply numbers
-const mockSalesmen = ['John Smith', 'Sarah Johnson', 'David Williams', 'Emma Brown'];
-const mockCities = ['New York', 'Chicago', 'Los Angeles', 'Dallas', 'Boston', 'Miami'];
-const mockAreas = ['Downtown', 'Midtown', 'Uptown', 'West Side', 'East Side', 'North Side', 'South Side'];
-const mockSupplyNumbers = ['SUP-001', 'SUP-002', 'SUP-003', 'SUP-004', 'SUP-005'];
+// Mock data for salesmen, cities, and areas
+const mockSalesmen = [
+  { id: 1, name: 'John Smith' },
+  { id: 2, name: 'David Martinez' },
+  { id: 3, name: 'Sarah Johnson' },
+];
+
+const mockCities = [
+  { id: 1, name: 'Lahore' },
+  { id: 2, name: 'Karachi' },
+  { id: 3, name: 'Islamabad' },
+  { id: 4, name: 'Rawalpindi' },
+];
+
+const mockAreas = [
+  { id: 1, cityId: 1, name: 'Gulberg' },
+  { id: 2, cityId: 1, name: 'Defence' },
+  { id: 3, cityId: 2, name: 'Clifton' },
+  { id: 4, cityId: 2, name: 'DHA' },
+  { id: 5, cityId: 3, name: 'F-10' },
+  { id: 6, cityId: 3, name: 'G-9' },
+  { id: 7, cityId: 4, name: 'Saddar' },
+  { id: 8, cityId: 4, name: 'Chaklala' },
+];
 
 const CashBook = () => {
   const [cashBookNo, setCashBookNo] = useState('CB-2024-0001');
-  const [cashInHand, setCashInHand] = useState(15000.00);
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [city, setCity] = useState('');
-  const [name, setName] = useState('');
-  const [receipt, setReceipt] = useState('');
-  const [payment, setPayment] = useState('');
-  const [details, setDetails] = useState('');
-  const [cashAccount, setCashAccount] = useState('Main Cash');
+  const [cashInHand, setCashInHand] = useState(50000);
+  const [searchTerm, setSearchTerm] = useState('');
   const [selectedSalesman, setSelectedSalesman] = useState('');
   const [selectedCity, setSelectedCity] = useState('');
   const [selectedArea, setSelectedArea] = useState('');
-  const [selectedSupplyNo, setSelectedSupplyNo] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [entries, setEntries] = useState(mockCashEntries);
-  const [editingEntry, setEditingEntry] = useState<any>(null);
+  const [supplyNo, setSupplyNo] = useState('');
+  const [currentTransaction, setCurrentTransaction] = useState({
+    id: 0,
+    date: new Date().toISOString().split('T')[0],
+    city: '',
+    name: '',
+    receipt: 0,
+    payment: 0,
+    details: '',
+    previousBalance: 0,
+    balanceAmount: 0,
+    cashAccount: 'Main Account'
+  });
+  const [formMode, setFormMode] = useState<'add' | 'edit'>('add');
+  const [transactions, setTransactions] = useState(mockTransactions);
   
   const { toast } = useToast();
 
-  // Filter entries based on search
-  const filteredEntries = entries.filter(entry => {
+  // Filter areas based on selected city
+  const filteredAreas = mockAreas.filter(area => 
+    selectedCity ? area.cityId === parseInt(selectedCity) : true
+  );
+
+  // Filter transactions based on search term
+  const filteredTransactions = transactions.filter(transaction => {
     const searchLower = searchTerm.toLowerCase();
     return (
-      entry.name.toLowerCase().includes(searchLower) ||
-      entry.city.toLowerCase().includes(searchLower) ||
-      entry.details.toLowerCase().includes(searchLower) ||
-      entry.cashAccount.toLowerCase().includes(searchLower)
+      transaction.name.toLowerCase().includes(searchLower) ||
+      transaction.city.toLowerCase().includes(searchLower) ||
+      transaction.details.toLowerCase().includes(searchLower)
     );
   });
 
-  const handleSave = () => {
-    if (!city || !name || (!receipt && !payment) || !details) {
-      toast({
-        title: "Missing Fields",
-        description: "Please fill all required fields.",
-        variant: "destructive"
-      });
-      return;
-    }
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setCurrentTransaction(prev => ({
+      ...prev,
+      [name]: name === 'receipt' || name === 'payment' || name === 'previousBalance' || name === 'balanceAmount' 
+        ? parseFloat(value) || 0 
+        : value
+    }));
+  };
 
-    const receiptValue = parseFloat(receipt) || 0;
-    const paymentValue = parseFloat(payment) || 0;
+  const resetForm = () => {
+    setCurrentTransaction({
+      id: 0,
+      date: new Date().toISOString().split('T')[0],
+      city: '',
+      name: '',
+      receipt: 0,
+      payment: 0,
+      details: '',
+      previousBalance: 0,
+      balanceAmount: 0,
+      cashAccount: 'Main Account'
+    });
+    setFormMode('add');
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
     
-    if (editingEntry) {
-      // Update existing entry
-      const updatedEntries = entries.map(entry => {
-        if (entry.id === editingEntry.id) {
-          return {
-            ...entry,
-            city,
-            name,
-            receipt: receiptValue,
-            payment: paymentValue,
-            details,
-            cashAccount,
-            // Recalculate balance
-            balance: entry.prevBalance + receiptValue - paymentValue
-          };
-        }
-        return entry;
-      });
-      
-      setEntries(updatedEntries);
-      toast({
-        title: "Entry Updated",
-        description: "Cash book entry has been updated successfully."
-      });
-    } else {
-      // Add new entry
-      const lastEntry = entries.length > 0 ? entries[entries.length - 1] : null;
-      const prevBalance = lastEntry ? lastEntry.balance : 0;
-      
-      const newEntry = {
-        id: entries.length > 0 ? Math.max(...entries.map(e => e.id)) + 1 : 1,
-        date,
-        city,
-        name,
-        receipt: receiptValue,
-        payment: paymentValue,
-        details,
-        prevBalance,
-        balance: prevBalance + receiptValue - paymentValue,
-        cashAccount
+    if (formMode === 'add') {
+      // Add new transaction
+      const newTransaction = {
+        ...currentTransaction,
+        id: transactions.length > 0 ? Math.max(...transactions.map(t => t.id)) + 1 : 1
       };
       
-      setEntries([...entries, newEntry]);
+      setTransactions([...transactions, newTransaction]);
       toast({
-        title: "Entry Added",
-        description: "New cash book entry has been added successfully."
+        title: "Transaction Added",
+        description: `Transaction has been added to the cash book.`,
+      });
+    } else {
+      // Update existing transaction
+      setTransactions(transactions.map(t => t.id === currentTransaction.id ? currentTransaction : t));
+      toast({
+        title: "Transaction Updated",
+        description: `Transaction has been updated successfully.`,
       });
     }
     
     resetForm();
   };
 
-  const resetForm = () => {
-    setCity('');
-    setName('');
-    setReceipt('');
-    setPayment('');
-    setDetails('');
-    setCashAccount('Main Cash');
-    setEditingEntry(null);
-  };
-
-  const handleEdit = (entry: any) => {
-    setCity(entry.city);
-    setName(entry.name);
-    setReceipt(entry.receipt.toString());
-    setPayment(entry.payment.toString());
-    setDetails(entry.details);
-    setCashAccount(entry.cashAccount);
-    setEditingEntry(entry);
-  };
-
-  const handleSearch = () => {
-    toast({
-      title: "Search Results",
-      description: `Found ${filteredEntries.length} matching entries.`
-    });
-  };
-
-  const handleNext = () => {
-    setCashBookNo(`CB-2024-${Math.floor(1000 + Math.random() * 9000)}`);
-    toast({
-      title: "Next Cash Book",
-      description: "Ready to create entries for the next cash book."
-    });
+  const handleEdit = (transaction: any) => {
+    setCurrentTransaction(transaction);
+    setFormMode('edit');
   };
 
   return (
     <PageContainer 
       title="Cash Book" 
-      subtitle="Track and manage cash transactions"
+      subtitle="Manage and track cash transactions"
     >
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
         {/* Cash Book Header */}
@@ -170,15 +163,15 @@ const CashBook = () => {
                   <Plus className="mr-2 h-4 w-4" />
                   New
                 </Button>
-                <Button onClick={handleSave}>
+                <Button onClick={handleSubmit}>
                   <Save className="mr-2 h-4 w-4" />
-                  {editingEntry ? 'Update' : 'Save'}
+                  Save
                 </Button>
               </div>
             </div>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <div>
                 <label htmlFor="cashBookNo" className="block text-sm font-medium mb-1">Cash Book No</label>
                 <input
@@ -186,18 +179,7 @@ const CashBook = () => {
                   type="text"
                   className="w-full p-2 rounded-md border border-input bg-background"
                   value={cashBookNo}
-                  readOnly
-                />
-              </div>
-              
-              <div>
-                <label htmlFor="date" className="block text-sm font-medium mb-1">Date</label>
-                <input
-                  id="date"
-                  type="date"
-                  className="w-full p-2 rounded-md border border-input bg-background"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
+                  onChange={(e) => setCashBookNo(e.target.value)}
                 />
               </div>
               
@@ -205,55 +187,56 @@ const CashBook = () => {
                 <label htmlFor="cashInHand" className="block text-sm font-medium mb-1">Cash in Hand</label>
                 <input
                   id="cashInHand"
-                  type="text"
+                  type="number"
                   className="w-full p-2 rounded-md border border-input bg-background"
-                  value={`$${cashInHand.toFixed(2)}`}
-                  readOnly
+                  value={cashInHand}
+                  onChange={(e) => setCashInHand(parseFloat(e.target.value) || 0)}
                 />
               </div>
               
               <div>
-                <label htmlFor="cashAccount" className="block text-sm font-medium mb-1">Cash Account</label>
-                <select
-                  id="cashAccount"
-                  className="w-full p-2 rounded-md border border-input bg-background"
-                  value={cashAccount}
-                  onChange={(e) => setCashAccount(e.target.value)}
-                >
-                  <option value="Main Cash">Main Cash</option>
-                  <option value="Petty Cash">Petty Cash</option>
-                  <option value="Bank Account">Bank Account</option>
-                </select>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-              <div>
                 <label htmlFor="salesman" className="block text-sm font-medium mb-1">Salesman</label>
                 <select
                   id="salesman"
+                  name="salesman"
                   className="w-full p-2 rounded-md border border-input bg-background"
                   value={selectedSalesman}
                   onChange={(e) => setSelectedSalesman(e.target.value)}
                 >
                   <option value="">Select Salesman</option>
-                  {mockSalesmen.map((salesman, index) => (
-                    <option key={index} value={salesman}>{salesman}</option>
+                  {mockSalesmen.map(salesman => (
+                    <option key={salesman.id} value={salesman.id.toString()}>{salesman.name}</option>
                   ))}
                 </select>
               </div>
               
               <div>
-                <label htmlFor="selectCity" className="block text-sm font-medium mb-1">City</label>
+                <label htmlFor="supplyNo" className="block text-sm font-medium mb-1">Supply No</label>
+                <input
+                  id="supplyNo"
+                  type="text"
+                  className="w-full p-2 rounded-md border border-input bg-background"
+                  value={supplyNo}
+                  onChange={(e) => setSupplyNo(e.target.value)}
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="city" className="block text-sm font-medium mb-1">City</label>
                 <select
-                  id="selectCity"
+                  id="city"
+                  name="city"
                   className="w-full p-2 rounded-md border border-input bg-background"
                   value={selectedCity}
-                  onChange={(e) => setSelectedCity(e.target.value)}
+                  onChange={(e) => {
+                    setSelectedCity(e.target.value);
+                    setSelectedArea('');
+                    setCurrentTransaction(prev => ({ ...prev, city: mockCities.find(c => c.id === parseInt(e.target.value))?.name || '' }));
+                  }}
                 >
                   <option value="">Select City</option>
-                  {mockCities.map((city, index) => (
-                    <option key={index} value={city}>{city}</option>
+                  {mockCities.map(city => (
+                    <option key={city.id} value={city.id.toString()}>{city.name}</option>
                   ))}
                 </select>
               </div>
@@ -262,43 +245,28 @@ const CashBook = () => {
                 <label htmlFor="area" className="block text-sm font-medium mb-1">Area</label>
                 <select
                   id="area"
+                  name="area"
                   className="w-full p-2 rounded-md border border-input bg-background"
                   value={selectedArea}
                   onChange={(e) => setSelectedArea(e.target.value)}
+                  disabled={!selectedCity}
                 >
                   <option value="">Select Area</option>
-                  {mockAreas.map((area, index) => (
-                    <option key={index} value={area}>{area}</option>
+                  {filteredAreas.map(area => (
+                    <option key={area.id} value={area.id.toString()}>{area.name}</option>
                   ))}
                 </select>
               </div>
               
               <div>
-                <label htmlFor="supplyNo" className="block text-sm font-medium mb-1">Supply No</label>
-                <select
-                  id="supplyNo"
-                  className="w-full p-2 rounded-md border border-input bg-background"
-                  value={selectedSupplyNo}
-                  onChange={(e) => setSelectedSupplyNo(e.target.value)}
-                >
-                  <option value="">Select Supply No</option>
-                  {mockSupplyNumbers.map((supplyNo, index) => (
-                    <option key={index} value={supplyNo}>{supplyNo}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <div>
-                <label htmlFor="city" className="block text-sm font-medium mb-1">City</label>
+                <label htmlFor="date" className="block text-sm font-medium mb-1">Date</label>
                 <input
-                  id="city"
-                  type="text"
+                  id="date"
+                  name="date"
+                  type="date"
                   className="w-full p-2 rounded-md border border-input bg-background"
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  required
+                  value={currentTransaction.date}
+                  onChange={handleInputChange}
                 />
               </div>
               
@@ -306,35 +274,25 @@ const CashBook = () => {
                 <label htmlFor="name" className="block text-sm font-medium mb-1">Name</label>
                 <input
                   id="name"
+                  name="name"
                   type="text"
                   className="w-full p-2 rounded-md border border-input bg-background"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
+                  value={currentTransaction.name}
+                  onChange={handleInputChange}
                 />
               </div>
-              
-              <div>
-                <label htmlFor="details" className="block text-sm font-medium mb-1">Details</label>
-                <input
-                  id="details"
-                  type="text"
-                  className="w-full p-2 rounded-md border border-input bg-background"
-                  value={details}
-                  onChange={(e) => setDetails(e.target.value)}
-                  required
-                />
-              </div>
-              
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
               <div>
                 <label htmlFor="receipt" className="block text-sm font-medium mb-1">Receipt</label>
                 <input
                   id="receipt"
+                  name="receipt"
                   type="number"
-                  step="0.01"
                   className="w-full p-2 rounded-md border border-input bg-background"
-                  value={receipt}
-                  onChange={(e) => setReceipt(e.target.value)}
+                  value={currentTransaction.receipt}
+                  onChange={handleInputChange}
                 />
               </div>
               
@@ -342,42 +300,79 @@ const CashBook = () => {
                 <label htmlFor="payment" className="block text-sm font-medium mb-1">Payment</label>
                 <input
                   id="payment"
+                  name="payment"
                   type="number"
-                  step="0.01"
                   className="w-full p-2 rounded-md border border-input bg-background"
-                  value={payment}
-                  onChange={(e) => setPayment(e.target.value)}
+                  value={currentTransaction.payment}
+                  onChange={handleInputChange}
                 />
+              </div>
+              
+              <div>
+                <label htmlFor="previousBalance" className="block text-sm font-medium mb-1">Previous Balance</label>
+                <input
+                  id="previousBalance"
+                  name="previousBalance"
+                  type="number"
+                  className="w-full p-2 rounded-md border border-input bg-background"
+                  value={currentTransaction.previousBalance}
+                  onChange={handleInputChange}
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="balanceAmount" className="block text-sm font-medium mb-1">Balance Amount</label>
+                <input
+                  id="balanceAmount"
+                  name="balanceAmount"
+                  type="number"
+                  className="w-full p-2 rounded-md border border-input bg-background"
+                  value={currentTransaction.balanceAmount}
+                  onChange={handleInputChange}
+                />
+              </div>
+              
+              <div className="lg:col-span-2">
+                <label htmlFor="details" className="block text-sm font-medium mb-1">Details</label>
+                <textarea
+                  id="details"
+                  name="details"
+                  rows={2}
+                  className="w-full p-2 rounded-md border border-input bg-background"
+                  value={currentTransaction.details}
+                  onChange={handleInputChange}
+                />
+              </div>
+              
+              <div className="lg:col-span-2">
+                <label htmlFor="cashAccount" className="block text-sm font-medium mb-1">Cash Account</label>
+                <select
+                  id="cashAccount"
+                  name="cashAccount"
+                  className="w-full p-2 rounded-md border border-input bg-background"
+                  value={currentTransaction.cashAccount}
+                  onChange={handleInputChange}
+                >
+                  <option value="Main Account">Main Account</option>
+                  <option value="Secondary Account">Secondary Account</option>
+                  <option value="Petty Cash">Petty Cash</option>
+                </select>
               </div>
             </div>
           </CardContent>
         </Card>
         
-        {/* Cash Book Entries */}
+        {/* Transactions List */}
         <Card className="lg:col-span-3">
           <CardHeader>
-            <div className="flex justify-between items-center flex-wrap gap-4">
-              <CardTitle>Cash Book Entries</CardTitle>
-              <div className="flex items-center space-x-2">
+            <div className="flex justify-between items-center">
+              <CardTitle>Transactions</CardTitle>
+              <div className="w-1/3">
                 <SearchInput 
                   value={searchTerm}
                   onChange={setSearchTerm}
-                  placeholder="Search entries..."
-                  className="w-64"
+                  placeholder="Search transactions..."
                 />
-                <Button variant="outline" size="icon" onClick={handleSearch}>
-                  <Search className="h-4 w-4" />
-                </Button>
-              </div>
-              <div className="flex space-x-2">
-                <Button variant="outline" onClick={resetForm}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  New
-                </Button>
-                <Button variant="outline" onClick={handleNext}>
-                  <ArrowRight className="mr-2 h-4 w-4" />
-                  Next
-                </Button>
               </div>
             </div>
           </CardHeader>
@@ -392,38 +387,32 @@ const CashBook = () => {
                     <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Receipt</th>
                     <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Payment</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Details</th>
-                    <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Prev. Balance</th>
                     <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Balance</th>
                     <th className="px-4 py-3 text-center text-sm font-medium text-muted-foreground">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredEntries.length > 0 ? (
-                    filteredEntries.map((entry, index) => (
+                  {filteredTransactions.length > 0 ? (
+                    filteredTransactions.map((transaction, index) => (
                       <tr 
-                        key={entry.id} 
+                        key={transaction.id} 
                         className={`border-b border-border/50 hover:bg-muted/50 transition-colors ${
                           index % 2 === 0 ? 'bg-background' : 'bg-muted/20'
                         }`}
                       >
-                        <td className="px-4 py-3 text-sm">{entry.date}</td>
-                        <td className="px-4 py-3 text-sm">{entry.city}</td>
-                        <td className="px-4 py-3 text-sm">{entry.name}</td>
-                        <td className="px-4 py-3 text-sm text-right">
-                          {entry.receipt > 0 ? `$${entry.receipt.toFixed(2)}` : '-'}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-right">
-                          {entry.payment > 0 ? `$${entry.payment.toFixed(2)}` : '-'}
-                        </td>
-                        <td className="px-4 py-3 text-sm">{entry.details}</td>
-                        <td className="px-4 py-3 text-sm text-right">${entry.prevBalance.toFixed(2)}</td>
-                        <td className="px-4 py-3 text-sm text-right">${entry.balance.toFixed(2)}</td>
+                        <td className="px-4 py-3 text-sm">{transaction.date}</td>
+                        <td className="px-4 py-3 text-sm">{transaction.city}</td>
+                        <td className="px-4 py-3 text-sm">{transaction.name}</td>
+                        <td className="px-4 py-3 text-sm text-right">${transaction.receipt.toFixed(2)}</td>
+                        <td className="px-4 py-3 text-sm text-right">${transaction.payment.toFixed(2)}</td>
+                        <td className="px-4 py-3 text-sm max-w-xs truncate">{transaction.details}</td>
+                        <td className="px-4 py-3 text-sm text-right">${transaction.balanceAmount.toFixed(2)}</td>
                         <td className="px-4 py-3 text-sm">
-                          <div className="flex justify-center space-x-2">
+                          <div className="flex items-center justify-center space-x-2">
                             <Button 
                               variant="ghost" 
                               size="icon" 
-                              onClick={() => handleEdit(entry)}
+                              onClick={() => handleEdit(transaction)}
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
@@ -433,24 +422,38 @@ const CashBook = () => {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={9} className="px-4 py-8 text-center text-muted-foreground">
+                      <td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">
                         <FileSearch className="h-8 w-8 mx-auto mb-2" />
-                        {searchTerm ? 'No entries match your search criteria' : 'No cash book entries found'}
+                        {searchTerm ? 'No transactions match your search criteria' : 'No transactions have been added yet'}
                       </td>
                     </tr>
                   )}
                 </tbody>
               </table>
             </div>
+            
+            <div className="flex justify-between mt-6">
+              <div className="flex space-x-2">
+                <Button variant="outline">
+                  <Plus className="mr-2 h-4 w-4" />
+                  New
+                </Button>
+                <Button variant="outline">
+                  <Edit className="mr-2 h-4 w-4" />
+                  Edit
+                </Button>
+                <Button variant="outline">
+                  <Search className="mr-2 h-4 w-4" />
+                  Search
+                </Button>
+              </div>
+              
+              <Button variant="outline">
+                Next
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
           </CardContent>
-          <CardFooter className="flex justify-between">
-            <div>
-              <span className="text-sm text-muted-foreground">Total Entries: {filteredEntries.length}</span>
-            </div>
-            <div>
-              <span className="text-sm font-medium">Current Balance: ${cashInHand.toFixed(2)}</span>
-            </div>
-          </CardFooter>
         </Card>
       </div>
     </PageContainer>

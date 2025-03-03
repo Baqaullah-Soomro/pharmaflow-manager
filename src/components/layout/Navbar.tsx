@@ -23,9 +23,15 @@ const Navbar = () => {
 
   const navLinks = [
     { name: 'Dashboard', path: '/dashboard' },
-    { name: 'Products', path: '/products' },
+    { name: 'Items', path: '/item-registration' },
     { name: 'Sales', path: '/sales' },
-    { name: 'Reports', path: '/reports' },
+    { name: 'Purchase', path: '/purchase' },
+    { name: 'Sales Return', path: '/sales-return' },
+    { name: 'Cash Book', path: '/cash-book' },
+    { name: 'Reports', path: '/accounts-reports' },
+    { name: 'Cash Collections', path: '/cash-bank-collections' },
+    { name: 'Cash Payment', path: '/cash-bank-payment' },
+    { name: 'Other Menu', path: '/other-menu' },
   ];
 
   return (
@@ -91,7 +97,7 @@ const Navbar = () => {
           </div>
 
           {/* Desktop navigation */}
-          <nav className="hidden md:flex items-center space-x-6">
+          <nav className="hidden md:flex items-center space-x-4">
             {navLinks.map((link) => (
               <NavLink
                 key={link.path}
@@ -154,6 +160,7 @@ const Navbar = () => {
                     : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                 )
               }
+              onClick={() => setIsOpen(false)}
             >
               {link.name}
             </NavLink>
@@ -161,6 +168,7 @@ const Navbar = () => {
           <NavLink
             to="/auth"
             className="block px-3 py-2 rounded-md text-base font-medium bg-primary text-primary-foreground transition-colors hover:bg-primary/90"
+            onClick={() => setIsOpen(false)}
           >
             Sign In
           </NavLink>

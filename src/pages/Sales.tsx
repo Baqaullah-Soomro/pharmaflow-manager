@@ -280,8 +280,10 @@ const Sales = () => {
         }
       }
     `,
-    // Fix: Making content function return a Promise to match expected type
-    content: () => Promise.resolve(thermalPrintRef.current),
+    // Fix: Properly returning a Promise from the content function
+    content: async () => {
+      return thermalPrintRef.current;
+    },
   });
 
   const printThermal = () => {

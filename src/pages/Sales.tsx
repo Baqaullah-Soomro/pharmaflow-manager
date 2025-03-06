@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { 
   Plus, 
@@ -22,6 +23,7 @@ import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import { useReactToPrint } from 'react-to-print';
 
+// This ensures TypeScript recognizes autoTable as a method on jsPDF
 declare module 'jspdf' {
   interface jsPDF {
     autoTable: (options: any) => jsPDF;
@@ -215,28 +217,35 @@ const Sales = () => {
       `$${item.netAmount.toFixed(2)}`
     ]);
     
-    doc.autoTable({
-      head: [tableColumn],
-      body: tableRows,
-      startY: 55,
-      theme: 'grid',
-      styles: { fontSize: 8 },
-      headStyles: { fillColor: [66, 135, 245] }
-    });
-    
-    const finalY = doc.lastAutoTable.finalY || 150;
-    
-    doc.text(`Total Items: ${totalItems}`, 130, finalY + 10);
-    doc.text(`Gross Amount: $${grossBillAmount.toFixed(2)}`, 130, finalY + 15);
-    doc.text(`Discount Amount: $${discountAmount.toFixed(2)}`, 130, finalY + 20);
-    doc.text(`Net Amount: $${netBillAmount.toFixed(2)}`, 130, finalY + 25);
-    doc.text(`Previous Balance: $${previousBalance.toFixed(2)}`, 130, finalY + 30);
-    doc.text(`Cash Received: $${cashReceived.toFixed(2)}`, 130, finalY + 35);
-    doc.text(`Final Amount: $${finalAmount.toFixed(2)}`, 130, finalY + 40);
-    
-    doc.setFontSize(8);
-    doc.text('Thank you for your business!', 105, finalY + 50, { align: 'center' });
-    doc.text(`Generated on ${new Date().toLocaleString()}`, 105, finalY + 55, { align: 'center' });
+    // Fix: Explicitly loading jspdf-autotable this way
+    if (doc.autoTable) {
+      doc.autoTable({
+        head: [tableColumn],
+        body: tableRows,
+        startY: 55,
+        theme: 'grid',
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [66, 135, 245] }
+      });
+      
+      const finalY = doc.lastAutoTable.finalY || 150;
+      
+      doc.text(`Total Items: ${totalItems}`, 130, finalY + 10);
+      doc.text(`Gross Amount: $${grossBillAmount.toFixed(2)}`, 130, finalY + 15);
+      doc.text(`Discount Amount: $${discountAmount.toFixed(2)}`, 130, finalY + 20);
+      doc.text(`Net Amount: $${netBillAmount.toFixed(2)}`, 130, finalY + 25);
+      doc.text(`Previous Balance: $${previousBalance.toFixed(2)}`, 130, finalY + 30);
+      doc.text(`Cash Received: $${cashReceived.toFixed(2)}`, 130, finalY + 35);
+      doc.text(`Final Amount: $${finalAmount.toFixed(2)}`, 130, finalY + 40);
+      
+      doc.setFontSize(8);
+      doc.text('Thank you for your business!', 105, finalY + 50, { align: 'center' });
+      doc.text(`Generated on ${new Date().toLocaleString()}`, 105, finalY + 55, { align: 'center' });
+    } else {
+      // If autoTable is not available, add a fallback
+      doc.text("PDF generation requires jspdf-autotable plugin", 20, 60);
+      console.error("jspdf-autotable plugin not loaded correctly");
+    }
     
     doc.save(`Invoice-${invoiceNo}.pdf`);
     
@@ -271,7 +280,8 @@ const Sales = () => {
         }
       }
     `,
-    content: async () => thermalPrintRef.current,
+    // Fix: Making content function return a Promise to match expected type
+    content: () => Promise.resolve(thermalPrintRef.current),
   });
 
   const printThermal = () => {

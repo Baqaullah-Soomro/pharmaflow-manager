@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { 
   Plus, 
@@ -179,16 +178,13 @@ const Sales = () => {
       return;
     }
 
-    // Create new jsPDF instance
     const doc = new jsPDF();
     
-    // Add company header
     doc.setFontSize(18);
     doc.text('MedFlow Healthcare Solutions', 105, 15, { align: 'center' });
     doc.setFontSize(12);
     doc.text('Invoice', 105, 25, { align: 'center' });
     
-    // Add invoice details
     doc.setFontSize(10);
     doc.text(`Invoice No: ${invoiceNo}`, 15, 35);
     doc.text(`Date: ${invoiceDate}`, 15, 40);
@@ -205,7 +201,6 @@ const Sales = () => {
       doc.text(`Account ID: ${selectedCustomer.accountId}`, 130, 45);
     }
     
-    // Create the table
     const tableColumn = ['#', 'Item Code', 'Item Name', 'Packing', 'Qty', 'Price', 'Bonus', 'Gross', 'Discount', 'Net'];
     const tableRows = invoiceItems.map((item, index) => [
       index + 1,
@@ -220,7 +215,6 @@ const Sales = () => {
       `$${item.netAmount.toFixed(2)}`
     ]);
     
-    // Add the table to the PDF
     doc.autoTable({
       head: [tableColumn],
       body: tableRows,
@@ -232,7 +226,6 @@ const Sales = () => {
     
     const finalY = doc.lastAutoTable.finalY || 150;
     
-    // Add summary information
     doc.text(`Total Items: ${totalItems}`, 130, finalY + 10);
     doc.text(`Gross Amount: $${grossBillAmount.toFixed(2)}`, 130, finalY + 15);
     doc.text(`Discount Amount: $${discountAmount.toFixed(2)}`, 130, finalY + 20);
@@ -241,12 +234,10 @@ const Sales = () => {
     doc.text(`Cash Received: $${cashReceived.toFixed(2)}`, 130, finalY + 35);
     doc.text(`Final Amount: $${finalAmount.toFixed(2)}`, 130, finalY + 40);
     
-    // Add footer
     doc.setFontSize(8);
     doc.text('Thank you for your business!', 105, finalY + 50, { align: 'center' });
     doc.text(`Generated on ${new Date().toLocaleString()}`, 105, finalY + 55, { align: 'center' });
     
-    // Save the PDF
     doc.save(`Invoice-${invoiceNo}.pdf`);
     
     toast({
@@ -280,9 +271,7 @@ const Sales = () => {
         }
       }
     `,
-    content: () => {
-      return thermalPrintRef.current;
-    },
+    content: async () => thermalPrintRef.current,
   });
 
   const printThermal = () => {

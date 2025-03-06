@@ -276,7 +276,9 @@ const Sales = () => {
         }
       }
     `,
-    content: () => Promise.resolve(thermalPrintRef.current),
+    content: () => {
+      return Promise.resolve(thermalPrintRef.current);
+    },
   });
 
   const printThermal = () => {

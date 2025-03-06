@@ -277,6 +277,9 @@ const Sales = () => {
       }
     `,
     content: () => {
+      if (!thermalPrintRef.current) {
+        return Promise.reject("Print ref not available");
+      }
       return Promise.resolve(thermalPrintRef.current);
     },
   });

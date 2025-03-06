@@ -1,6 +1,6 @@
 
 import React from 'react';
-import Navbar from '@/components/layout/Navbar';
+import Sidebar from '@/components/layout/Sidebar';
 import Footer from '@/components/layout/Footer';
 
 interface PageContainerProps {
@@ -13,9 +13,9 @@ interface PageContainerProps {
 const PageContainer: React.FC<PageContainerProps> = ({ children, title, subtitle, icon }) => {
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar />
+      <Sidebar />
       
-      <main className="flex-1 py-32 px-4 sm:px-6 lg:px-8 bg-background">
+      <main className="flex-1 ml-20 md:ml-64 py-24 px-4 sm:px-6 lg:px-8 bg-background">
         <div className="container mx-auto max-w-7xl">
           <div className="mb-8 flex items-center gap-3">
             {icon && <div>{icon}</div>}

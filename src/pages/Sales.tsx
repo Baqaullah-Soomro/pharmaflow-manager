@@ -22,7 +22,13 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { useReactToPrint } from 'react-to-print';
 
-// Mock data for items
+declare module 'jspdf' {
+  interface jsPDF {
+    autoTable: (options: any) => jsPDF;
+    lastAutoTable: { finalY: number };
+  }
+}
+
 const mockItems = [
   { id: 1, code: 'MD001', itemCode: 'IC001', name: 'Surgical Gloves', packing: '100/box', stock: 120, price: 45.99 },
   { id: 2, code: 'MD002', itemCode: 'IC002', name: 'Digital Thermometer', packing: '1/unit', stock: 35, price: 89.99 },
@@ -31,7 +37,6 @@ const mockItems = [
   { id: 5, code: 'MD005', itemCode: 'IC005', name: 'Penicillin Injection', packing: '10/pack', stock: 15, price: 124.99 },
 ];
 
-// Mock data for customers
 const mockCustomers = [
   { id: 1, accountId: 'CUST001', name: 'Memorial Hospital', retailer: 'Yes', balance: 5000.00, lastPurchase: '2023-12-15', lastDiscount: 5 },
   { id: 2, accountId: 'CUST002', name: 'City Clinic', retailer: 'No', balance: 3500.00, lastPurchase: '2024-01-10', lastDiscount: 3 },
@@ -39,7 +44,6 @@ const mockCustomers = [
   { id: 4, accountId: 'CUST004', name: 'Lakeside Pharmacy', retailer: 'Yes', balance: 2800.00, lastPurchase: '2024-01-25', lastDiscount: 4 },
 ];
 
-// Mock data for salesmen
 const mockSalesmen = [
   { id: 1, name: 'John Smith' },
   { id: 2, name: 'David Martinez' },
@@ -220,7 +224,7 @@ const Sales = () => {
       headStyles: { fillColor: [66, 135, 245] }
     });
     
-    const finalY = (doc as any).lastAutoTable.finalY || 150;
+    const finalY = doc.lastAutoTable.finalY || 150;
     
     doc.text(`Total Items: ${totalItems}`, 130, finalY + 10);
     doc.text(`Gross Amount: $${grossBillAmount.toFixed(2)}`, 130, finalY + 15);

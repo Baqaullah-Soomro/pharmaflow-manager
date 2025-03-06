@@ -280,6 +280,8 @@ const Sales = () => {
         }
       }
     `,
+    // Properly implement the content function that returns the ref
+    content: () => thermalPrintRef.current,
   });
 
   const printThermal = () => {

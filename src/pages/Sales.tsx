@@ -1,3 +1,4 @@
+<lov-code>
 import React, { useState, useRef } from 'react';
 import { 
   Plus, 
@@ -168,89 +169,6 @@ const Sales = () => {
     setShowInvoiceSummary(true);
   };
 
-  const generatePDF = () => {
-    if (invoiceItems.length === 0) {
-      toast({
-        title: "Error",
-        description: "Cannot generate PDF for an empty invoice. Please add items.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const doc = new jsPDF();
-    
-    doc.setFontSize(18);
-    doc.text('MedFlow Healthcare Solutions', 105, 15, { align: 'center' });
-    doc.setFontSize(12);
-    doc.text('Invoice', 105, 25, { align: 'center' });
-    
-    doc.setFontSize(10);
-    doc.text(`Invoice No: ${invoiceNo}`, 15, 35);
-    doc.text(`Date: ${invoiceDate}`, 15, 40);
-    doc.text(`Supply No: ${supplyNo || 'N/A'}`, 15, 45);
-    
-    const salesmanName = selectedSalesman 
-      ? mockSalesmen.find(s => s.id.toString() === selectedSalesman)?.name || 'N/A' 
-      : 'N/A';
-    
-    doc.text(`Salesman: ${salesmanName}`, 130, 35);
-    
-    if (selectedCustomer) {
-      doc.text(`Customer: ${selectedCustomer.name}`, 130, 40);
-      doc.text(`Account ID: ${selectedCustomer.accountId}`, 130, 45);
-    }
-    
-    const tableColumn = ['#', 'Item Code', 'Item Name', 'Packing', 'Qty', 'Price', 'Bonus', 'Gross', 'Discount', 'Net'];
-    const tableRows = invoiceItems.map((item, index) => [
-      index + 1,
-      item.itemCode,
-      item.itemName,
-      item.packing,
-      item.quantity,
-      `$${item.price.toFixed(2)}`,
-      item.bonus,
-      `$${item.grossAmount.toFixed(2)}`,
-      `$${item.discountAmount.toFixed(2)}`,
-      `$${item.netAmount.toFixed(2)}`
-    ]);
-    
-    if (doc.autoTable) {
-      doc.autoTable({
-        head: [tableColumn],
-        body: tableRows,
-        startY: 55,
-        theme: 'grid',
-        styles: { fontSize: 8 },
-        headStyles: { fillColor: [66, 135, 245] }
-      });
-      
-      const finalY = doc.lastAutoTable.finalY || 150;
-      
-      doc.text(`Total Items: ${totalItems}`, 130, finalY + 10);
-      doc.text(`Gross Amount: $${grossBillAmount.toFixed(2)}`, 130, finalY + 15);
-      doc.text(`Discount Amount: $${discountAmount.toFixed(2)}`, 130, finalY + 20);
-      doc.text(`Net Amount: $${netBillAmount.toFixed(2)}`, 130, finalY + 25);
-      doc.text(`Previous Balance: $${previousBalance.toFixed(2)}`, 130, finalY + 30);
-      doc.text(`Cash Received: $${cashReceived.toFixed(2)}`, 130, finalY + 35);
-      doc.text(`Final Amount: $${finalAmount.toFixed(2)}`, 130, finalY + 40);
-      
-      doc.setFontSize(8);
-      doc.text('Thank you for your business!', 105, finalY + 50, { align: 'center' });
-      doc.text(`Generated on ${new Date().toLocaleString()}`, 105, finalY + 55, { align: 'center' });
-    } else {
-      doc.text("PDF generation requires jspdf-autotable plugin", 20, 60);
-      console.error("jspdf-autotable plugin not loaded correctly");
-    }
-    
-    doc.save(`Invoice-${invoiceNo}.pdf`);
-    
-    toast({
-      title: "PDF Generated",
-      description: `Invoice ${invoiceNo} has been generated as PDF.`,
-    });
-  };
-
   const handlePrintThermal = useReactToPrint({
     documentTitle: `Invoice-${invoiceNo}`,
     onBeforePrint: () => {
@@ -276,12 +194,7 @@ const Sales = () => {
         }
       }
     `,
-    content: () => {
-      if (!thermalPrintRef.current) {
-        return Promise.reject("Print ref not available");
-      }
-      return Promise.resolve(thermalPrintRef.current);
-    },
+    content: () => thermalPrintRef.current,
   });
 
   const printThermal = () => {
@@ -300,6 +213,109 @@ const Sales = () => {
       toast({
         title: "Error",
         description: "Print component not ready. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const generatePDF = () => {
+    if (invoiceItems.length === 0) {
+      toast({
+        title: "Error",
+        description: "Cannot generate PDF for an empty invoice. Please add items.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const doc = new jsPDF();
+      
+      // Set document metadata
+      doc.setProperties({
+        title: `Invoice-${invoiceNo}`,
+        subject: 'Sales Invoice',
+        author: 'MedFlow Healthcare Solutions',
+        keywords: 'invoice, sales, healthcare',
+        creator: 'MedFlow Invoice System'
+      });
+      
+      // Company header
+      doc.setFontSize(18);
+      doc.text('MedFlow Healthcare Solutions', 105, 15, { align: 'center' });
+      doc.setFontSize(12);
+      doc.text('Invoice', 105, 25, { align: 'center' });
+      
+      // Invoice details
+      doc.setFontSize(10);
+      doc.text(`Invoice No: ${invoiceNo}`, 15, 35);
+      doc.text(`Date: ${invoiceDate}`, 15, 40);
+      doc.text(`Supply No: ${supplyNo || 'N/A'}`, 15, 45);
+      
+      const salesmanName = selectedSalesman 
+        ? mockSalesmen.find(s => s.id.toString() === selectedSalesman)?.name || 'N/A' 
+        : 'N/A';
+      
+      doc.text(`Salesman: ${salesmanName}`, 130, 35);
+      
+      if (selectedCustomer) {
+        doc.text(`Customer: ${selectedCustomer.name}`, 130, 40);
+        doc.text(`Account ID: ${selectedCustomer.accountId}`, 130, 45);
+      }
+      
+      // Table content
+      const tableColumn = ['#', 'Item Code', 'Item Name', 'Packing', 'Qty', 'Price', 'Bonus', 'Gross', 'Discount', 'Net'];
+      const tableRows = invoiceItems.map((item, index) => [
+        index + 1,
+        item.itemCode,
+        item.itemName,
+        item.packing,
+        item.quantity,
+        `$${item.price.toFixed(2)}`,
+        item.bonus,
+        `$${item.grossAmount.toFixed(2)}`,
+        `$${item.discountAmount.toFixed(2)}`,
+        `$${item.netAmount.toFixed(2)}`
+      ]);
+      
+      // Draw the table
+      doc.autoTable({
+        head: [tableColumn],
+        body: tableRows,
+        startY: 55,
+        theme: 'grid',
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [66, 135, 245] }
+      });
+      
+      const finalY = doc.lastAutoTable.finalY || 150;
+      
+      // Summary information
+      doc.text(`Total Items: ${totalItems}`, 130, finalY + 10);
+      doc.text(`Gross Amount: $${grossBillAmount.toFixed(2)}`, 130, finalY + 15);
+      doc.text(`Discount Amount: $${discountAmount.toFixed(2)}`, 130, finalY + 20);
+      doc.text(`Net Amount: $${netBillAmount.toFixed(2)}`, 130, finalY + 25);
+      doc.text(`Previous Balance: $${previousBalance.toFixed(2)}`, 130, finalY + 30);
+      doc.text(`Cash Received: $${cashReceived.toFixed(2)}`, 130, finalY + 35);
+      doc.text(`Final Amount: $${finalAmount.toFixed(2)}`, 130, finalY + 40);
+      
+      // Footer
+      doc.setFontSize(8);
+      doc.text('Thank you for your business!', 105, finalY + 50, { align: 'center' });
+      doc.text(`Generated on ${new Date().toLocaleString()}`, 105, finalY + 55, { align: 'center' });
+      
+      // Save the PDF
+      doc.save(`Invoice-${invoiceNo}.pdf`);
+      
+      toast({
+        title: "PDF Generated",
+        description: `Invoice ${invoiceNo} has been generated as PDF.`,
+      });
+    } catch (error) {
+      console.error("PDF generation error:", error);
+      toast({
+        title: "PDF Generation Failed",
+        description: "An error occurred while generating the PDF. Please try again.",
         variant: "destructive"
       });
     }
@@ -803,258 +819,4 @@ const Sales = () => {
               <div className="text-sm font-semibold text-right">{discountPercentage}%</div>
               
               <div className="border-t border-border pt-2 text-sm text-muted-foreground">Previous Balance:</div>
-              <div className="border-t border-border pt-2 text-sm font-semibold text-right">${previousBalance.toFixed(2)}</div>
-              
-              <div className="text-sm font-medium">Net Bill:</div>
-              <div className="text-sm font-bold text-right">${netBill.toFixed(2)}</div>
-            </div>
-            
-            <div className="pt-2">
-              <label htmlFor="cashReceived" className="block text-sm font-medium mb-1">Cash Received</label>
-              <input
-                id="cashReceived"
-                type="number"
-                min="0"
-                step="0.01"
-                className="w-full p-2 rounded-md border border-input bg-background"
-                value={cashReceived}
-                onChange={(e) => setCashReceived(Number(e.target.value))}
-              />
-            </div>
-            
-            <div className="pt-2 border-t border-border">
-              <div className="flex justify-between items-center">
-                <div className="text-sm font-bold">Final Amount:</div>
-                <div className="text-lg font-bold">${finalAmount.toFixed(2)}</div>
-              </div>
-            </div>
-            
-            {selectedCustomer && (
-              <div className="space-y-2 pt-4 border-t border-border">
-                <h4 className="text-sm font-medium">Customer Details</h4>
-                
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="text-sm text-muted-foreground">Last Purchase:</div>
-                  <div className="text-sm text-right">{selectedCustomer.lastPurchase}</div>
-                  
-                  <div className="text-sm text-muted-foreground">Last Discount:</div>
-                  <div className="text-sm text-right">{selectedCustomer.lastDiscount}%</div>
-                </div>
-              </div>
-            )}
-          </CardContent>
-          <CardFooter>
-            <div className="w-full grid grid-cols-2 gap-2">
-              <CustomButton variant="outline3D" className="w-full" onClick={handleViewAccount}>
-                <div className="flex flex-col items-center justify-center p-1">
-                  <Calculator className="h-4 w-4 mb-1" />
-                  <span className="text-xs">Account</span>
-                </div>
-              </CustomButton>
-              
-              <CustomButton variant="outline3D" className="w-full" onClick={handleShowFindBill}>
-                <div className="flex flex-col items-center justify-center p-1">
-                  <Receipt className="h-4 w-4 mb-1" />
-                  <span className="text-xs">Find Bill</span>
-                </div>
-              </CustomButton>
-              
-              <CustomButton variant="outline3D" className="w-full" onClick={handleCreateEstimate}>
-                <div className="flex flex-col items-center justify-center p-1">
-                  <FileText className="h-4 w-4 mb-1" />
-                  <span className="text-xs">Estimate</span>
-                </div>
-              </CustomButton>
-              
-              <CustomButton variant="outline3D" className="w-full" onClick={handleViewEstimates}>
-                <div className="flex flex-col items-center justify-center p-1">
-                  <FileSearch className="h-4 w-4 mb-1" />
-                  <span className="text-xs">View Est.</span>
-                </div>
-              </CustomButton>
-            </div>
-          </CardFooter>
-        </Card>
-      </div>
-
-      {showFindBillModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
-            <h2 className="text-xl font-bold mb-4">Find Bill</h2>
-            <div className="mb-4">
-              <input
-                type="text"
-                placeholder="Search by invoice number, customer name..."
-                className="w-full p-2 border rounded-md"
-              />
-            </div>
-            
-            {savedInvoices.length > 0 ? (
-              <div className="overflow-x-auto mb-4">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="px-4 py-2 text-left">Invoice No</th>
-                      <th className="px-4 py-2 text-left">Date</th>
-                      <th className="px-4 py-2 text-left">Customer</th>
-                      <th className="px-4 py-2 text-right">Amount</th>
-                      <th className="px-4 py-2 text-center">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {savedInvoices.map((invoice) => (
-                      <tr key={invoice.id} className="border-b hover:bg-muted/50">
-                        <td className="px-4 py-2">{invoice.invoiceNo}</td>
-                        <td className="px-4 py-2">{invoice.invoiceDate}</td>
-                        <td className="px-4 py-2">{invoice.customer?.name || 'N/A'}</td>
-                        <td className="px-4 py-2 text-right">${invoice.netAmount.toFixed(2)}</td>
-                        <td className="px-4 py-2 text-center">
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => handleLoadInvoice(invoice)}
-                          >
-                            Load
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                No saved invoices found
-              </div>
-            )}
-            
-            <div className="flex justify-end mt-4">
-              <Button variant="outline" onClick={() => setShowFindBillModal(false)}>Close</Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {viewingEstimate && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
-            <h2 className="text-xl font-bold mb-4">View Estimates</h2>
-            
-            {estimates.length > 0 ? (
-              <div className="overflow-x-auto mb-4">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="px-4 py-2 text-left">Estimate No</th>
-                      <th className="px-4 py-2 text-left">Date</th>
-                      <th className="px-4 py-2 text-left">Customer</th>
-                      <th className="px-4 py-2 text-right">Amount</th>
-                      <th className="px-4 py-2 text-center">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {estimates.map((estimate) => (
-                      <tr key={estimate.id} className="border-b hover:bg-muted/50">
-                        <td className="px-4 py-2">{estimate.estimateNo}</td>
-                        <td className="px-4 py-2">{estimate.date}</td>
-                        <td className="px-4 py-2">{estimate.customer?.name || 'N/A'}</td>
-                        <td className="px-4 py-2 text-right">${estimate.netAmount.toFixed(2)}</td>
-                        <td className="px-4 py-2 text-center">
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => handleLoadEstimate(estimate)}
-                          >
-                            Load
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                No estimates found
-              </div>
-            )}
-            
-            <div className="flex justify-end mt-4">
-              <Button variant="outline" onClick={() => setViewingEstimate(false)}>Close</Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div style={{ display: 'none' }}>
-        <div ref={thermalPrintRef} className="p-4 font-mono text-xs" style={{ width: '80mm' }}>
-          <div className="text-center mb-4">
-            <div className="font-bold text-base">MedFlow Healthcare</div>
-            <div>123 Medical Plaza, Suite 456</div>
-            <div>Healthcare City, HC 12345</div>
-            <div>Tel: (123) 456-7890</div>
-          </div>
-          
-          <div className="mb-4">
-            <div><b>Invoice:</b> {invoiceNo}</div>
-            <div><b>Date:</b> {invoiceDate}</div>
-            <div><b>Customer:</b> {selectedCustomer?.name || 'N/A'}</div>
-            <div><b>Salesman:</b> {selectedSalesman 
-              ? mockSalesmen.find(s => s.id.toString() === selectedSalesman)?.name || 'N/A' 
-              : 'N/A'}</div>
-          </div>
-          
-          <div className="border-t border-b border-gray-700 my-2 py-2">
-            <div className="flex justify-between font-bold">
-              <div style={{ width: '40%' }}>Item</div>
-              <div style={{ width: '20%' }}>Qty</div>
-              <div style={{ width: '20%' }}>Price</div>
-              <div style={{ width: '20%' }}>Amount</div>
-            </div>
-          </div>
-          
-          {invoiceItems.map((item, idx) => (
-            <div key={idx} className="flex justify-between py-1">
-              <div style={{ width: '40%' }}>{item.itemName}</div>
-              <div style={{ width: '20%' }}>{item.quantity}</div>
-              <div style={{ width: '20%' }}>${item.price.toFixed(2)}</div>
-              <div style={{ width: '20%' }}>${item.netAmount.toFixed(2)}</div>
-            </div>
-          ))}
-          
-          <div className="border-t border-gray-700 mt-2 pt-2">
-            <div className="flex justify-between">
-              <div>Subtotal:</div>
-              <div>${grossBillAmount.toFixed(2)}</div>
-            </div>
-            <div className="flex justify-between">
-              <div>Discount:</div>
-              <div>${discountAmount.toFixed(2)}</div>
-            </div>
-            <div className="flex justify-between font-bold">
-              <div>Total:</div>
-              <div>${netBillAmount.toFixed(2)}</div>
-            </div>
-            <div className="flex justify-between">
-              <div>Cash Received:</div>
-              <div>${cashReceived.toFixed(2)}</div>
-            </div>
-            <div className="flex justify-between font-bold">
-              <div>Balance Due:</div>
-              <div>${finalAmount.toFixed(2)}</div>
-            </div>
-          </div>
-          
-          <div className="text-center mt-4">
-            <div>Thank you for your business!</div>
-            <div className="mt-2">
-              {new Date().toLocaleString()}
-            </div>
-          </div>
-        </div>
-      </div>
-    </PageContainer>
-  );
-};
-
-export default Sales;
+              <div className

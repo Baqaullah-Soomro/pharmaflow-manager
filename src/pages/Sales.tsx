@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { 
   Plus, 
@@ -23,7 +22,6 @@ import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import { useReactToPrint } from 'react-to-print';
 
-// This ensures TypeScript recognizes autoTable as a method on jsPDF
 declare module 'jspdf' {
   interface jsPDF {
     autoTable: (options: any) => jsPDF;
@@ -217,7 +215,6 @@ const Sales = () => {
       `$${item.netAmount.toFixed(2)}`
     ]);
     
-    // Fix: Explicitly loading jspdf-autotable this way
     if (doc.autoTable) {
       doc.autoTable({
         head: [tableColumn],
@@ -242,7 +239,6 @@ const Sales = () => {
       doc.text('Thank you for your business!', 105, finalY + 50, { align: 'center' });
       doc.text(`Generated on ${new Date().toLocaleString()}`, 105, finalY + 55, { align: 'center' });
     } else {
-      // If autoTable is not available, add a fallback
       doc.text("PDF generation requires jspdf-autotable plugin", 20, 60);
       console.error("jspdf-autotable plugin not loaded correctly");
     }
@@ -280,10 +276,7 @@ const Sales = () => {
         }
       }
     `,
-    // Fix: Properly returning a Promise from the content function
-    content: async () => {
-      return thermalPrintRef.current;
-    },
+    content: () => Promise.resolve(thermalPrintRef.current),
   });
 
   const printThermal = () => {

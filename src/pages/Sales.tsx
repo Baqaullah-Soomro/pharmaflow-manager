@@ -1,4 +1,4 @@
-<lov-code>
+
 import React, { useState, useRef } from 'react';
 import { 
   Plus, 
@@ -169,6 +169,7 @@ const Sales = () => {
     setShowInvoiceSummary(true);
   };
 
+  // Fixed the print functionality to properly return a Promise
   const handlePrintThermal = useReactToPrint({
     documentTitle: `Invoice-${invoiceNo}`,
     onBeforePrint: () => {
@@ -194,7 +195,9 @@ const Sales = () => {
         }
       }
     `,
-    content: () => thermalPrintRef.current,
+    content: () => {
+      return Promise.resolve(thermalPrintRef.current);
+    },
   });
 
   const printThermal = () => {
@@ -819,4 +822,223 @@ const Sales = () => {
               <div className="text-sm font-semibold text-right">{discountPercentage}%</div>
               
               <div className="border-t border-border pt-2 text-sm text-muted-foreground">Previous Balance:</div>
-              <div className
+              <div className="border-t border-border pt-2 text-sm font-semibold text-right">${previousBalance.toFixed(2)}</div>
+              
+              <div className="text-sm text-muted-foreground">Cash Received:</div>
+              <div className="text-sm font-semibold text-right">
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  className="w-24 p-1 rounded border border-input bg-background text-right"
+                  value={cashReceived}
+                  onChange={(e) => setCashReceived(Number(e.target.value))}
+                />
+              </div>
+              
+              <div className="text-sm font-medium text-muted-foreground">Final Amount:</div>
+              <div className="text-sm font-bold text-right">${finalAmount.toFixed(2)}</div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-2 mt-4">
+              <Button variant="outline" size="sm" onClick={handleViewAccount}>
+                <FileSearch className="mr-1 h-4 w-4" />
+                View Account
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleCreateEstimate}>
+                <Calculator className="mr-1 h-4 w-4" />
+                Create Estimate
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+      
+      {/* Print reference - hidden but used for printing */}
+      <div className="hidden">
+        <div ref={thermalPrintRef} className="p-4 font-mono text-sm" style={{ width: '80mm' }}>
+          <div className="text-center mb-4">
+            <div className="font-bold text-lg">MedFlow Healthcare</div>
+            <div>123 Medical Avenue</div>
+            <div>+1 (555) 123-4567</div>
+            <div className="mt-2 text-xs">Tax ID: 12-3456789</div>
+            <div className="border-t border-b border-gray-400 my-2 py-1">SALES RECEIPT</div>
+          </div>
+          
+          <div className="mb-4">
+            <div>Invoice: {invoiceNo}</div>
+            <div>Date: {new Date().toLocaleDateString()}</div>
+            <div>Customer: {selectedCustomer?.name || 'Walk-in Customer'}</div>
+            <div>Salesman: {selectedSalesman 
+              ? mockSalesmen.find(s => s.id.toString() === selectedSalesman)?.name 
+              : 'N/A'}</div>
+          </div>
+          
+          <div className="border-t border-gray-400 pt-2 mb-4">
+            <div className="flex justify-between text-xs mb-1">
+              <span className="w-24 overflow-hidden">Item</span>
+              <span className="w-8 text-center">Qty</span>
+              <span className="w-12 text-right">Price</span>
+              <span className="w-16 text-right">Amount</span>
+            </div>
+            
+            {invoiceItems.map((item, idx) => (
+              <div key={idx} className="flex justify-between text-xs py-1 border-t border-gray-200">
+                <span className="w-24 overflow-hidden truncate">{item.itemName}</span>
+                <span className="w-8 text-center">{item.quantity}</span>
+                <span className="w-12 text-right">${item.price.toFixed(2)}</span>
+                <span className="w-16 text-right">${item.netAmount.toFixed(2)}</span>
+              </div>
+            ))}
+          </div>
+          
+          <div className="border-t border-gray-400 pt-2">
+            <div className="flex justify-between mb-1">
+              <span>Subtotal:</span>
+              <span>${grossBillAmount.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between mb-1">
+              <span>Discount:</span>
+              <span>${discountAmount.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between font-bold">
+              <span>Total:</span>
+              <span>${netBillAmount.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between mt-2">
+              <span>Cash Received:</span>
+              <span>${cashReceived.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Balance Due:</span>
+              <span>${(netBillAmount - cashReceived > 0 ? netBillAmount - cashReceived : 0).toFixed(2)}</span>
+            </div>
+          </div>
+          
+          <div className="mt-6 text-center text-xs">
+            <div>Thank you for your business!</div>
+            <div className="mt-2">Powered by MedFlow ERP</div>
+            <div className="mt-4">
+              {new Date().toLocaleDateString()} {new Date().toLocaleTimeString()}
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Modal for viewing estimates */}
+      {viewingEstimate && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-background rounded-lg p-6 w-full max-w-3xl max-h-[80vh] overflow-y-auto">
+            <h3 className="text-xl font-bold mb-4">Saved Estimates</h3>
+            
+            {estimates.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="px-4 py-2 text-left">Estimate No</th>
+                      <th className="px-4 py-2 text-left">Date</th>
+                      <th className="px-4 py-2 text-left">Customer</th>
+                      <th className="px-4 py-2 text-right">Amount</th>
+                      <th className="px-4 py-2 text-center">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {estimates.map((est) => (
+                      <tr key={est.id} className="border-b hover:bg-muted/50">
+                        <td className="px-4 py-2">{est.estimateNo}</td>
+                        <td className="px-4 py-2">{est.date}</td>
+                        <td className="px-4 py-2">{est.customer?.name || 'N/A'}</td>
+                        <td className="px-4 py-2 text-right">${est.netAmount.toFixed(2)}</td>
+                        <td className="px-4 py-2 text-center">
+                          <Button variant="outline" size="sm" onClick={() => handleLoadEstimate(est)}>
+                            Load
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center py-6 text-muted-foreground">
+                <Receipt className="h-12 w-12 mx-auto mb-2" />
+                No estimates available
+              </div>
+            )}
+            
+            <div className="flex justify-end mt-4">
+              <Button variant="outline" onClick={() => setViewingEstimate(false)}>
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Modal for finding bills */}
+      {showFindBillModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-background rounded-lg p-6 w-full max-w-3xl max-h-[80vh] overflow-y-auto">
+            <h3 className="text-xl font-bold mb-4">Find Bills</h3>
+            
+            <div className="mb-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <input
+                  type="text"
+                  className="w-full pl-10 p-2 rounded-md border border-input bg-background"
+                  placeholder="Search by invoice number or customer name..."
+                />
+              </div>
+            </div>
+            
+            {savedInvoices.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="px-4 py-2 text-left">Invoice No</th>
+                      <th className="px-4 py-2 text-left">Date</th>
+                      <th className="px-4 py-2 text-left">Customer</th>
+                      <th className="px-4 py-2 text-right">Amount</th>
+                      <th className="px-4 py-2 text-center">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {savedInvoices.map((inv) => (
+                      <tr key={inv.id} className="border-b hover:bg-muted/50">
+                        <td className="px-4 py-2">{inv.invoiceNo}</td>
+                        <td className="px-4 py-2">{inv.invoiceDate}</td>
+                        <td className="px-4 py-2">{inv.customer?.name || 'N/A'}</td>
+                        <td className="px-4 py-2 text-right">${inv.netAmount.toFixed(2)}</td>
+                        <td className="px-4 py-2 text-center">
+                          <Button variant="outline" size="sm" onClick={() => handleLoadInvoice(inv)}>
+                            Load
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center py-6 text-muted-foreground">
+                <FileText className="h-12 w-12 mx-auto mb-2" />
+                No saved invoices available
+              </div>
+            )}
+            
+            <div className="flex justify-end mt-4">
+              <Button variant="outline" onClick={() => setShowFindBillModal(false)}>
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </PageContainer>
+  );
+};
+
+export default Sales;

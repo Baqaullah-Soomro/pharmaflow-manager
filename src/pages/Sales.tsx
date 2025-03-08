@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { 
   Plus, 
@@ -169,7 +168,6 @@ const Sales = () => {
     setShowInvoiceSummary(true);
   };
 
-  // Fixed the print functionality to properly return a Promise
   const handlePrintThermal = useReactToPrint({
     documentTitle: `Invoice-${invoiceNo}`,
     onBeforePrint: () => {
@@ -234,7 +232,6 @@ const Sales = () => {
     try {
       const doc = new jsPDF();
       
-      // Set document metadata
       doc.setProperties({
         title: `Invoice-${invoiceNo}`,
         subject: 'Sales Invoice',
@@ -243,13 +240,11 @@ const Sales = () => {
         creator: 'MedFlow Invoice System'
       });
       
-      // Company header
       doc.setFontSize(18);
       doc.text('MedFlow Healthcare Solutions', 105, 15, { align: 'center' });
       doc.setFontSize(12);
       doc.text('Invoice', 105, 25, { align: 'center' });
       
-      // Invoice details
       doc.setFontSize(10);
       doc.text(`Invoice No: ${invoiceNo}`, 15, 35);
       doc.text(`Date: ${invoiceDate}`, 15, 40);
@@ -266,7 +261,6 @@ const Sales = () => {
         doc.text(`Account ID: ${selectedCustomer.accountId}`, 130, 45);
       }
       
-      // Table content
       const tableColumn = ['#', 'Item Code', 'Item Name', 'Packing', 'Qty', 'Price', 'Bonus', 'Gross', 'Discount', 'Net'];
       const tableRows = invoiceItems.map((item, index) => [
         index + 1,
@@ -281,7 +275,6 @@ const Sales = () => {
         `$${item.netAmount.toFixed(2)}`
       ]);
       
-      // Draw the table
       doc.autoTable({
         head: [tableColumn],
         body: tableRows,
@@ -293,7 +286,6 @@ const Sales = () => {
       
       const finalY = doc.lastAutoTable.finalY || 150;
       
-      // Summary information
       doc.text(`Total Items: ${totalItems}`, 130, finalY + 10);
       doc.text(`Gross Amount: $${grossBillAmount.toFixed(2)}`, 130, finalY + 15);
       doc.text(`Discount Amount: $${discountAmount.toFixed(2)}`, 130, finalY + 20);
@@ -302,12 +294,10 @@ const Sales = () => {
       doc.text(`Cash Received: $${cashReceived.toFixed(2)}`, 130, finalY + 35);
       doc.text(`Final Amount: $${finalAmount.toFixed(2)}`, 130, finalY + 40);
       
-      // Footer
       doc.setFontSize(8);
       doc.text('Thank you for your business!', 105, finalY + 50, { align: 'center' });
       doc.text(`Generated on ${new Date().toLocaleString()}`, 105, finalY + 55, { align: 'center' });
       
-      // Save the PDF
       doc.save(`Invoice-${invoiceNo}.pdf`);
       
       toast({
@@ -854,7 +844,6 @@ const Sales = () => {
         </Card>
       </div>
       
-      {/* Print reference - hidden but used for printing */}
       <div className="hidden">
         <div ref={thermalPrintRef} className="p-4 font-mono text-sm" style={{ width: '80mm' }}>
           <div className="text-center mb-4">
@@ -925,7 +914,6 @@ const Sales = () => {
         </div>
       </div>
       
-      {/* Modal for viewing estimates */}
       {viewingEstimate && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-background rounded-lg p-6 w-full max-w-3xl max-h-[80vh] overflow-y-auto">
@@ -976,7 +964,6 @@ const Sales = () => {
         </div>
       )}
       
-      {/* Modal for finding bills */}
       {showFindBillModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-background rounded-lg p-6 w-full max-w-3xl max-h-[80vh] overflow-y-auto">

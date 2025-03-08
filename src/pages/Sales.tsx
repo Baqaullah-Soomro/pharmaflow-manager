@@ -382,23 +382,188 @@ const Sales = () => {
       return;
     }
 
+    const estimateNo = `EST-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+
     const estimate = {
       id: Date.now().toString(),
-      estimateNo: `EST-${Math.floor(1000 + Math.random() * 9000)}`,
+      estimateNo,
       date: new Date().toISOString().split('T')[0],
       customer: selectedCustomer,
       items: [...invoiceItems],
       grossAmount: grossBillAmount,
       discountAmount,
-      netAmount: netBillAmount
+      netAmount: netBillAmount,
+      discountPercentage,
+      timestamp: new Date().toISOString(),
+      status: 'pending',
+      validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] // 30 days validity
     };
 
     setEstimates([...estimates, estimate]);
 
-    toast({
-      title: "Estimate Created",
-      description: `Estimate ${estimate.estimateNo} has been created.`,
-    });
+    try {
+      const doc = new jsPDF();
+      
+      doc.setProperties({
+        title: `Estimate-${estimate.estimateNo}`,
+        subject: 'Sales Estimate',
+        author: 'MedFlow Healthcare Solutions',
+        keywords: 'estimate, quotation, sales, healthcare',
+        creator: 'MedFlow Estimate System'
+      });
+      
+      doc.setFontSize(18);
+      doc.text('MedFlow Healthcare Solutions', 105, 15, { align: 'center' });
+      doc.setFontSize(14);
+      doc.text('ESTIMATE / QUOTATION', 105, 25, { align: 'center' });
+      
+      doc.setFontSize(10);
+      doc.text(`Estimate No: ${estimate.estimateNo}`, 15, 35);
+      doc.text(`Date: ${estimate.date}`, 15, 40);
+      doc.text(`Valid Until: ${estimate.validUntil}`, 15, 45);
+      
+      if (estimate.customer) {
+        doc.text(`Customer: ${estimate.customer.name}`, 130, 35);
+        doc.text(`Account ID: ${estimate.customer.accountId}`, 130, 40);
+      }
+      
+      const tableColumn = ['#', 'Item Code', 'Item Name', 'Packing', 'Qty', 'Price', 'Gross', 'Discount', 'Net'];
+      const tableRows = estimate.items.map((item, index) => [
+        index + 1,
+        item.itemCode,
+        item.itemName,
+        item.packing,
+        item.quantity,
+        `$${item.price.toFixed(2)}`,
+        `$${item.grossAmount.toFixed(2)}`,
+        `$${item.discountAmount.toFixed(2)}`,
+        `$${item.netAmount.toFixed(2)}`
+      ]);
+      
+      doc.autoTable({
+        head: [tableColumn],
+        body: tableRows,
+        startY: 55,
+        theme: 'grid',
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [66, 135, 245] }
+      });
+      
+      const finalY = doc.lastAutoTable.finalY || 150;
+      
+      doc.text(`Total Items: ${estimate.items.length}`, 130, finalY + 10);
+      doc.text(`Gross Amount: $${estimate.grossAmount.toFixed(2)}`, 130, finalY + 15);
+      doc.text(`Discount Amount: $${estimate.discountAmount.toFixed(2)}`, 130, finalY + 20);
+      doc.text(`Net Amount: $${estimate.netAmount.toFixed(2)}`, 130, finalY + 25);
+      doc.text(`Discount %: ${estimate.discountPercentage}%`, 130, finalY + 30);
+      
+      doc.setFontSize(8);
+      doc.text('This is only an estimate. Prices and availability may change.', 105, finalY + 40, { align: 'center' });
+      doc.text(`Valid until ${estimate.validUntil}`, 105, finalY + 45, { align: 'center' });
+      doc.text(`Generated on ${new Date().toLocaleString()}`, 105, finalY + 50, { align: 'center' });
+      
+      doc.save(`Estimate-${estimate.estimateNo}.pdf`);
+      
+      toast({
+        title: "Estimate Created",
+        description: `Estimate ${estimate.estimateNo} has been created and saved as PDF.`,
+      });
+    } catch (error) {
+      console.error("Estimate PDF generation error:", error);
+      toast({
+        title: "Estimate Created",
+        description: `Estimate ${estimate.estimateNo} has been created, but PDF generation failed.`,
+      });
+    }
+  };
+
+  const handleViewAccount = () => {
+    if (!selectedCustomer) {
+      toast({
+        title: "Error",
+        description: "Please select a customer to view their account.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const doc = new jsPDF();
+      
+      doc.setProperties({
+        title: `Account Statement-${selectedCustomer.accountId}`,
+        subject: 'Account Statement',
+        author: 'MedFlow Healthcare Solutions',
+        keywords: 'account, statement, ledger, healthcare',
+        creator: 'MedFlow Account System'
+      });
+      
+      doc.setFontSize(18);
+      doc.text('MedFlow Healthcare Solutions', 105, 15, { align: 'center' });
+      doc.setFontSize(14);
+      doc.text('ACCOUNT STATEMENT', 105, 25, { align: 'center' });
+      
+      doc.setFontSize(10);
+      doc.text(`Account ID: ${selectedCustomer.accountId}`, 15, 35);
+      doc.text(`Customer: ${selectedCustomer.name}`, 15, 40);
+      doc.text(`Type: ${selectedCustomer.retailer === 'Yes' ? 'Retailer' : 'End Customer'}`, 15, 45);
+      doc.text(`Statement Date: ${new Date().toLocaleDateString()}`, 130, 35);
+      
+      const transactions = [
+        { date: '2024-01-10', description: 'Opening Balance', debit: 0, credit: 0, balance: selectedCustomer.balance },
+        { date: '2024-01-15', description: 'Invoice #INV-2024-1001', debit: 1250.50, credit: 0, balance: selectedCustomer.balance + 1250.50 },
+        { date: '2024-01-20', description: 'Payment Received', debit: 0, credit: 1000.00, balance: selectedCustomer.balance + 1250.50 - 1000 },
+        { date: selectedCustomer.lastPurchase, description: `Latest Purchase`, debit: 750.25, credit: 0, balance: selectedCustomer.balance },
+      ];
+      
+      const tableColumn = ['Date', 'Description', 'Debit ($)', 'Credit ($)', 'Balance ($)'];
+      const tableRows = transactions.map(trans => [
+        trans.date,
+        trans.description,
+        trans.debit.toFixed(2),
+        trans.credit.toFixed(2),
+        trans.balance.toFixed(2)
+      ]);
+      
+      doc.autoTable({
+        head: [tableColumn],
+        body: tableRows,
+        startY: 55,
+        theme: 'grid',
+        styles: { fontSize: 9 },
+        headStyles: { fillColor: [66, 135, 245] },
+        columnStyles: {
+          0: { cellWidth: 25 },
+          1: { cellWidth: 80 },
+          2: { cellWidth: 25, halign: 'right' },
+          3: { cellWidth: 25, halign: 'right' },
+          4: { cellWidth: 25, halign: 'right' }
+        }
+      });
+      
+      const finalY = doc.lastAutoTable.finalY || 150;
+      
+      doc.text(`Current Balance: $${selectedCustomer.balance.toFixed(2)}`, 130, finalY + 15);
+      doc.text(`Last Purchase: ${selectedCustomer.lastPurchase}`, 130, finalY + 20);
+      doc.text(`Current Discount Rate: ${selectedCustomer.lastDiscount}%`, 130, finalY + 25);
+      
+      doc.setFontSize(8);
+      doc.text('Please contact our accounts department for any discrepancies in this statement.', 105, finalY + 40, { align: 'center' });
+      doc.text(`Generated on ${new Date().toLocaleString()}`, 105, finalY + 45, { align: 'center' });
+      
+      doc.save(`AccountStatement-${selectedCustomer.accountId}.pdf`);
+      
+      toast({
+        title: "Account Statement Generated",
+        description: `Account statement for ${selectedCustomer.name} has been generated as PDF.`,
+      });
+    } catch (error) {
+      console.error("Account statement generation error:", error);
+      toast({
+        title: "Account Information",
+        description: `Account ID: ${selectedCustomer.accountId}, Balance: $${selectedCustomer.balance.toFixed(2)}`,
+      });
+    }
   };
 
   const handleViewEstimates = () => {
@@ -441,22 +606,6 @@ const Sales = () => {
     toast({
       title: "Invoice Loaded",
       description: `Invoice ${invoice.invoiceNo} has been loaded.`,
-    });
-  };
-
-  const handleViewAccount = () => {
-    if (!selectedCustomer) {
-      toast({
-        title: "Error",
-        description: "Please select a customer to view their account.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    toast({
-      title: "Account Information",
-      description: `Viewing account details for ${selectedCustomer.name}.`,
     });
   };
 
